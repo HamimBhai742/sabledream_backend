@@ -1,0 +1,50 @@
+import { Router } from "express";
+import { AuthRoutes } from "../modules/auth/auth.routes";
+import { JournalRoutes } from "../modules/journal/journal.routes";
+import { MoodRoutes } from "../modules/moods/mood.routes";
+import { ManifestationRoutes } from "../modules/manifestation/manifestation.routes";
+import { UserRoutes } from "../modules/user/user.routes";
+import { AffirmationRoutes } from "../modules/affirmation/affirmation.routes";
+import { ReminderRoutes } from "../modules/reminder/reminder.routes";
+import { NotificationRoutes } from "../modules/notification/notification.routes";
+
+export const rootRouter = Router();
+
+const routes = [
+  {
+    path: "/auth",
+    route: AuthRoutes,
+  },
+  {
+    path: "/journals",
+    route: JournalRoutes,
+  },
+  {
+    path: "/moods",
+    route: MoodRoutes,
+  },
+  {
+    path: "/manifestations",
+    route: ManifestationRoutes,
+  },
+  {
+    path: "/users",
+    route: UserRoutes,
+  },
+  {
+    path: "/affirmations",
+    route: AffirmationRoutes,
+  },
+  {
+    path: "/reminders",
+    route: ReminderRoutes,
+  },
+  {
+    path: "/notifications",
+    route: NotificationRoutes,
+  },
+];
+
+routes.forEach((route) => {
+  rootRouter.use(route.path, route.route);
+});

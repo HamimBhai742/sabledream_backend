@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                         String       @id @default(auto()) @map("_id") @db.ObjectId
+  name                       String
+  email                      String       @unique
+  password                   String?
+  provider                   AuthProvider @default(EMAIL)
+  providerId                 String?
+  role                       Role         @default(user)
+  status                     Status       @default(active)
+  isVerified                 Boolean      @default(false)
+  otp                        String?
+  otpExpiry                  DateTime?
+  forgetPasswordToken        String?
+  forgetPasswordTokenExpires DateTime?
+  image                      String?
+  phone                      String?
+  location                   String?
+  personalizationEnabled     Boolean      @default(true)
+  analyticsEnabled           Boolean      @default(true)
+  crashReportsEnabled        Boolean      @default(true)
+  fcmToken                   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  journals          Journal[]
+  journalCategories JournalCategory[]
+  moods             Mood[]
+  manifestations    Manifestation[]
+  savedAffirmations SavedAffirmation[]
+  reminders         Reminder[]
+  notifications     Notification[]
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+model Manifestation {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String  @db.ObjectId
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  lifeChange  String? // How this would change my life
+  category    String?
+  state       String?
+  feeling     String? // Feeling when realized
+  imageUrl    String?
+  imageKey    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Mood {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  energy     String // e.g., "Sad", "Sat", "Angry"
+  activities String[]
+  date       DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model Journal {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title   String
+  prompt  String?
+  content String?
+
+  imageUrl String?
+  imageKey String?
+
+  mood   JournalMood?
+  status JournalStatus @default(PUBLISHED)
+
+  isFavorite Boolean @default(false)
+  isArchived Boolean @default(false)
+
+  categoryIds String[]          @db.ObjectId
+  categories  JournalCategory[] @relation(fields: [categoryIds], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model JournalCategory {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name String
+  slug String
+
+  journalIds String[]  @db.ObjectId
+  journals   Journal[] @relation(fields: [journalIds], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+enum JournalMood {
+  HAPPY
+  SAD
+  CALM
+  GRATEFUL
+  ANXIOUS
+  EXCITED
+  NEUTRAL
+}
+
+enum JournalStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum Status {
+  active
+  inactive
+  blocked
+}
+
+enum Role {
+  user
+  admin
+}
+
+model Affirmation {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  text          String
+  category      String   // "Reflection" or "Affirmation"
+  goal          String   // e.g. "HELP THIS PLANET TO SURVIVE", "SAVE ANIMALS"
+  mood          String   // e.g. "HAPPY", "CALM", "ANXIOUS"
+  timeOfDay     String   // "Morning", "Afternoon", "Evening", "Night"
+  subStatements String[]
+  tags          String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  savedUsers SavedAffirmation[]
+}
+
+model SavedAffirmation {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String      @db.ObjectId
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  affirmationId String      @db.ObjectId
+  affirmation   Affirmation @relation(fields: [affirmationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, affirmationId])
+  @@index([userId])
+  @@index([affirmationId])
+}
+
+model Reminder {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String   // "journal", "mood", "affirmation"
+  dailyEnabled   Boolean  @default(false)
+  weeklyEnabled  Boolean  @default(false)
+  monthlyEnabled Boolean  @default(false)
+  daysOfMonth    Int[]    // e.g. [1, 15, 30]
+  daysOfWeek     String[] // e.g. ["MON", "WED", "FRI"]
+  time           String   @default("08:00") // e.g. "08:00"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  data      Json?    // Optional custom metadata payload (e.g. screen, frequency, etc)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
