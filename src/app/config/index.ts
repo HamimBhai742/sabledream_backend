@@ -6,6 +6,7 @@ export default {
   jwt_access_expire:process.env.JWT_ACCESS_EXPIRES_IN as string,
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET as string,
   jwt_refresh_expire: process.env.JWT_REFRESH_EXPIRES_IN as string,
+  dev_snapshot_key: process.env.DEV_SNAPSHOT_KEY as string,
   cloudinary: {
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
     api_key: process.env.CLOUDINARY_API_KEY as string,
@@ -14,5 +15,8 @@ export default {
   revenueCat: {
     apiKey: process.env.REVENUECAT_API_KEY as string,
     webhookAuth: process.env.REVENUECAT_WEBHOOK_AUTH as string,
+  },
+  aiService: {
+    apiKey: process.env.AI_SERVICE_API_KEY as string,
   },
 };

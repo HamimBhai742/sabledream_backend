@@ -6,7 +6,6 @@ const router = Router();
 
 // Public / Authenticated Routes
 router.get("/today", AffirmationController.getTodayAffirmation);
-router.get("/:id", AffirmationController.getAffirmationById);
 router.get("/", AffirmationController.getAllAffirmations);
 
 // Saved Affirmations (Authenticated)
@@ -16,5 +15,8 @@ router.delete("/:id/unsave", checkAuth("user", "admin"), AffirmationController.u
 
 // Admin-only creation
 router.post("/", checkAuth("admin"), AffirmationController.createAffirmation);
+
+// Must be last (otherwise it catches routes like `/saved`)
+router.get("/:id", AffirmationController.getAffirmationById);
 
 export const AffirmationRoutes = router;
