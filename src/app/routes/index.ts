@@ -7,6 +7,7 @@ import { UserRoutes } from "../modules/user/user.routes";
 import { AffirmationRoutes } from "../modules/affirmation/affirmation.routes";
 import { ReminderRoutes } from "../modules/reminder/reminder.routes";
 import { NotificationRoutes } from "../modules/notification/notification.routes";
+import { SubscriptionRoutes } from "../modules/subscription/subscription.routes";
 
 export const rootRouter = Router();
 
@@ -42,6 +43,10 @@ const routes = [
   {
     path: "/notifications",
     route: NotificationRoutes,
+  },
+  {
+    path: "/subscriptions",
+    route: SubscriptionRoutes,
   },
 ];
 

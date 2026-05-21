@@ -11,4 +11,8 @@ export default {
     api_key: process.env.CLOUDINARY_API_KEY as string,
     api_secret: process.env.CLOUDINARY_API_SECRET as string,
   },
+  revenueCat: {
+    apiKey: process.env.REVENUECAT_API_KEY as string,
+    webhookAuth: process.env.REVENUECAT_WEBHOOK_AUTH as string,
+  },
 };
