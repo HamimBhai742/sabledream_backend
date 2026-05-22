@@ -9,6 +9,7 @@ import { ReminderRoutes } from "../modules/reminder/reminder.routes";
 import { NotificationRoutes } from "../modules/notification/notification.routes";
 import { SubscriptionRoutes } from "../modules/subscription/subscription.routes";
 import { PublicDataRoutes } from "../modules/public-data/public-data.routes";
+import { ChatRoutes } from "../modules/chat/chat.routes";
 
 
 export const rootRouter = Router();
@@ -53,10 +54,13 @@ const routes = [
   {
     path: "/public-data",
     route: PublicDataRoutes,
+  },
+  {
+    path: "/chat",
+    route: ChatRoutes,
   }
 ];
 
 routes.forEach((route) => {
   rootRouter.use(route.path, route.route);
 });
-

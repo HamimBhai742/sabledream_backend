@@ -1,0 +1,20 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AuthRoutes = void 0;
+const express_1 = require("express");
+const auth_controller_1 = require("./auth.controller");
+const checkAuth_1 = __importDefault(require("../../middleware/checkAuth"));
+const router = (0, express_1.Router)();
+router.post("/register", auth_controller_1.AuthController.registerUser);
+router.post("/login", auth_controller_1.AuthController.loginUser);
+router.post("/forgot-password", auth_controller_1.AuthController.forgotPassword);
+router.post("/reset-password", auth_controller_1.AuthController.resetPassword);
+router.post("/google-login", auth_controller_1.AuthController.googleLoginController);
+router.post("/apple-login", auth_controller_1.AuthController.appleLoginController);
+router.post("/logout", auth_controller_1.AuthController.logoutUser);
+router.get("/me", (0, checkAuth_1.default)("user", "admin"), auth_controller_1.AuthController.getMe);
+router.post("/refresh-token", auth_controller_1.AuthController.refreshTokenController);
+exports.AuthRoutes = router;
