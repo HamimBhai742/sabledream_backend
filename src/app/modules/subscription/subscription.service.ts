@@ -54,6 +54,19 @@ const getPlanMeta = (productId: string | null) => {
   };
 };
 
+const toDateFromMs = (value: unknown): Date | null => {
+  if (value === null || value === undefined) return null;
+  const ms =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : NaN;
+  if (!Number.isFinite(ms)) return null;
+  const date = new Date(ms);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 export const SubscriptionService = {
   /**
    * Fetch subscription info for a user. Mapped to Figma design specifications.
@@ -302,9 +315,9 @@ export const SubscriptionService = {
 
     const productId = event.product_id;
     const planMeta = getPlanMeta(productId);
-    const expiresDate = event.expiration_at_ms ? new Date(event.expiration_at_ms) : null;
-    const purchaseDate = event.purchased_at_ms ? new Date(event.purchased_at_ms) : null;
-    const originalPurchaseDate = event.original_purchased_at_ms ? new Date(event.original_purchased_at_ms) : null;
+    const expiresDate = toDateFromMs(event.expiration_at_ms);
+    const purchaseDate = toDateFromMs(event.purchased_at_ms);
+    const originalPurchaseDate = toDateFromMs(event.original_purchased_at_ms);
     const store = event.store || "App Store";
 
     let status: "active" | "trial" | "expired" = "expired";
@@ -315,9 +328,21 @@ export const SubscriptionService = {
       case "INITIAL_PURCHASE":
       case "RENEWAL":
       case "PRODUCT_CHANGE":
+      case "UNCANCELLATION":
         const isTrial = event.period_type === "TRIAL";
         status = isTrial ? "trial" : "active";
         planType = planMeta ? planMeta.type : "free";
+        break;
+
+      case "NON_RENEWING_PURCHASE":
+        // Non-renewing purchases can still have an expiration; treat as active while not expired.
+        if (expiresDate && expiresDate > new Date()) {
+          status = "active";
+          planType = planMeta ? planMeta.type : "free";
+        } else {
+          status = "expired";
+          planType = "free";
+        }
         break;
 
       case "EXPIRATION":

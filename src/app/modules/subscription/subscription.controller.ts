@@ -72,7 +72,6 @@ const syncSubscription = catchAsyncFn(async (req: Request, res: Response) => {
 const handleWebhook = catchAsyncFn(async (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
   const webhookAuth = config.revenueCat.webhookAuth;
-
   // Verify authorization secret if it is configured in env variables
   if (webhookAuth) {
     const expectedAuth = webhookAuth.startsWith("Bearer ") ? webhookAuth : `Bearer ${webhookAuth}`;
@@ -82,6 +81,10 @@ const handleWebhook = catchAsyncFn(async (req: Request, res: Response) => {
   }
 
   const result = await SubscriptionService.handleRevenueCatWebhook(req.body);
+
+  if (result && (result as any).success === false) {
+    throw new AppError(httpStatus.BAD_REQUEST, (result as any).message || "Webhook processing failed");
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

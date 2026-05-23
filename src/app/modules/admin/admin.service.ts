@@ -52,6 +52,13 @@ const parsePageLimit = (pageRaw: unknown, limitRaw: unknown, maxLimit = 200) => 
   return { page, limit, skip };
 };
 
+const parseDateOrUndefined = (value?: string) => {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date;
+};
+
 export const AdminService = {
   async getOverview(days: number) {
     const safeDays = Number.isFinite(days) ? Math.min(Math.max(Math.trunc(days), 1), 365) : 30;
@@ -407,6 +414,152 @@ export const AdminService = {
       charts: {
         dailyMoods: toSeries(dateKeys, dailyTotalMap),
       },
+    };
+  },
+
+  async getActiveSubscriptions(query: import("./admin.types").TAdminSubscriptionListQuery) {
+    const { page, limit, skip } = parsePageLimit(query.page, query.limit, 200);
+    const now = new Date();
+
+    const status = (query.status || "").trim();
+    const planType = (query.planType || "").trim();
+    const search = (query.search || "").trim();
+
+    const allowedSortBy = new Set(["createdAt", "updatedAt", "expiresDate", "purchaseDate"]);
+    const sortBy = allowedSortBy.has(String(query.sortBy)) ? String(query.sortBy) : "expiresDate";
+    const sortOrder = query.sortOrder === "asc" ? "asc" : "desc";
+
+    const where: any = {
+      status: { in: ["active", "trial"] },
+      expiresDate: { gt: now },
+    };
+
+    if (status && ["active", "trial", "expired"].includes(status)) {
+      where.status = status === "expired" ? "expired" : { in: [status] };
+      if (status === "expired") {
+        delete where.expiresDate;
+      }
+    }
+
+    if (planType && ["free", "monthly", "annual"].includes(planType)) {
+      where.planType = planType;
+    }
+
+    if (search) {
+      where.user = {
+        OR: [
+          { email: { contains: search, mode: "insensitive" } },
+          { name: { contains: search, mode: "insensitive" } },
+        ],
+      };
+    }
+
+    const [total, subscriptions] = await Promise.all([
+      prisma.subscription.count({ where }),
+      prisma.subscription.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder } as any,
+        include: {
+          user: { select: { id: true, name: true, email: true, status: true, role: true } },
+        },
+      }),
+    ]);
+
+    const totalPage = Math.ceil(total / limit);
+    return { meta: { page, limit, total, totalPage }, data: subscriptions };
+  },
+
+  async getTransactions(query: import("./admin.types").TAdminTransactionListQuery) {
+    const { page, limit, skip } = parsePageLimit(query.page, query.limit, 200);
+
+    const type = (query.type || "").trim();
+    const status = (query.status || "").trim();
+    const currency = (query.currency || "").trim();
+    const userId = (query.userId || "").trim();
+    const search = (query.search || "").trim();
+
+    const fromDate = parseDateOrUndefined(query.fromDate);
+    const toDate = parseDateOrUndefined(query.toDate);
+
+    const allowedSortBy = new Set(["createdAt", "amount"]);
+    const sortBy = allowedSortBy.has(String(query.sortBy)) ? String(query.sortBy) : "createdAt";
+    const sortOrder = query.sortOrder === "asc" ? "asc" : "desc";
+
+    const where: any = {};
+    if (type && ["charge", "refund"].includes(type)) where.type = type;
+    if (status) where.status = status;
+    if (currency) where.currency = currency;
+    if (userId) where.userId = userId;
+
+    if (fromDate || toDate) {
+      where.createdAt = {};
+      if (fromDate) where.createdAt.gte = fromDate;
+      if (toDate) where.createdAt.lte = toDate;
+    }
+
+    if (search) {
+      where.OR = [
+        { transactionId: { contains: search, mode: "insensitive" } },
+        { name: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search, mode: "insensitive" } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+        { user: { name: { contains: search, mode: "insensitive" } } },
+      ];
+    }
+
+    const [total, transactions] = await Promise.all([
+      prisma.transaction.count({ where }),
+      prisma.transaction.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder } as any,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      }),
+    ]);
+
+    const totalPage = Math.ceil(total / limit);
+    return { meta: { page, limit, total, totalPage }, data: transactions };
+  },
+
+  async getSubscriptionSummary() {
+    const now = new Date();
+
+    const [
+      totalSubscriptions,
+      activeSubscriptions,
+      trialSubscriptions,
+      expiredSubscriptions,
+      totalTransactions,
+    ] = await Promise.all([
+      prisma.subscription.count(),
+      prisma.subscription.count({
+        where: { status: "active", expiresDate: { gt: now } },
+      }),
+      prisma.subscription.count({
+        where: { status: "trial", expiresDate: { gt: now } },
+      }),
+      prisma.subscription.count({
+        where: { status: "expired" },
+      }),
+      prisma.transaction.count(),
+    ]);
+
+    return {
+      subscriptions: {
+        total: totalSubscriptions,
+        active: activeSubscriptions,
+        trial: trialSubscriptions,
+        expired: expiredSubscriptions,
+      },
+      transactions: {
+        total: totalTransactions,
+      },
+      asOf: now.toISOString(),
     };
   },
 };

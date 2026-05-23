@@ -143,4 +143,39 @@ export const AdminController = {
       data: result as any,
     });
   }),
+
+  getActiveSubscriptions: catchAsyncFn(async (req: Request, res: Response) => {
+    const result = await AdminService.getActiveSubscriptions(req.query as any);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Active subscriptions retrieved successfully",
+      meta: result.meta as any,
+      data: result.data as any,
+    });
+  }),
+
+  getTransactions: catchAsyncFn(async (req: Request, res: Response) => {
+    const result = await AdminService.getTransactions(req.query as any);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Transactions retrieved successfully",
+      meta: result.meta as any,
+      data: result.data as any,
+    });
+  }),
+
+  getSubscriptionSummary: catchAsyncFn(async (_req: Request, res: Response) => {
+    const result = await AdminService.getSubscriptionSummary();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Subscription summary retrieved successfully",
+      data: result as any,
+    });
+  }),
 };
