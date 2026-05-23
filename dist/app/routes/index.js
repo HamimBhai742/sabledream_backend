@@ -13,6 +13,7 @@ const notification_routes_1 = require("../modules/notification/notification.rout
 const subscription_routes_1 = require("../modules/subscription/subscription.routes");
 const public_data_routes_1 = require("../modules/public-data/public-data.routes");
 const chat_routes_1 = require("../modules/chat/chat.routes");
+const admin_routes_1 = require("../modules/admin/admin.routes");
 exports.rootRouter = (0, express_1.Router)();
 const routes = [
     {
@@ -52,13 +53,17 @@ const routes = [
         route: subscription_routes_1.SubscriptionRoutes,
     },
     {
-        path: "/public-data",
+        path: "/",
         route: public_data_routes_1.PublicDataRoutes,
     },
     {
         path: "/chat",
         route: chat_routes_1.ChatRoutes,
-    }
+    },
+    {
+        path: "/admin",
+        route: admin_routes_1.AdminRoutes,
+    },
 ];
 routes.forEach((route) => {
     exports.rootRouter.use(route.path, route.route);

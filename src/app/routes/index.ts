@@ -10,6 +10,7 @@ import { NotificationRoutes } from "../modules/notification/notification.routes"
 import { SubscriptionRoutes } from "../modules/subscription/subscription.routes";
 import { PublicDataRoutes } from "../modules/public-data/public-data.routes";
 import { ChatRoutes } from "../modules/chat/chat.routes";
+import { AdminRoutes } from "../modules/admin/admin.routes";
 
 
 export const rootRouter = Router();
@@ -52,13 +53,17 @@ const routes = [
     route: SubscriptionRoutes,
   },
   {
-    path: "/public-data",
+    path: "/",
     route: PublicDataRoutes,
   },
   {
     path: "/chat",
     route: ChatRoutes,
-  }
+  },
+  {
+    path: "/admin",
+    route: AdminRoutes,
+  },
 ];
 
 routes.forEach((route) => {

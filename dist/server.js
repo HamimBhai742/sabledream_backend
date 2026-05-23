@@ -17,20 +17,32 @@ const http_1 = __importDefault(require("http"));
 const config_1 = __importDefault(require("./app/config"));
 const connectToDatabase_1 = require("./app/db/connectToDatabase");
 const notificationScheduler_1 = require("./app/utils/notificationScheduler");
+const seedAdminFunction_1 = require("./app/db/seedAdminFunction");
 const PORT = config_1.default.port || 5000;
 // Create HTTP server instance
 const server = http_1.default.createServer(app_1.default);
 const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield (0, connectToDatabase_1.connectToDatabase)();
+        const seedResult = yield (0, seedAdminFunction_1.seedAdminFunction)();
+        console.log(seedAdminFunction_1.seedAdminFunction);
+        if (seedResult.status === "created") {
+            console.log(`[seedAdmin] created admin: ${seedResult.email} (${seedResult.adminId})`);
+        }
+        else if (seedResult.status === "exists") {
+            console.log(`[seedAdmin] admin exists: ${seedResult.email} (${seedResult.adminId})`);
+        }
+        else {
+            console.log(`[seedAdmin] skipped: ${seedResult.reason}`);
+        }
         server.listen(PORT, () => {
-            console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+            console.log(`Server is running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`);
             // Start the scheduled push notification checker
             (0, notificationScheduler_1.startNotificationScheduler)();
         });
     }
     catch (error) {
-        console.error('Failed to start the server:', error);
+        console.error("Failed to start the server:", error);
         process.exit(1);
     }
 });
@@ -39,23 +51,23 @@ startServer();
 // Graceful Shutdown & Global Error Handlers
 // ==========================================
 // Handle uncaught exceptions synchronously
-process.on('uncaughtException', (err) => {
-    console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+process.on("uncaughtException", (err) => {
+    console.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
     console.error(err.name, err.message, err.stack);
     process.exit(1);
 });
 // Handle unhandled promise rejections asynchronously
-process.on('unhandledRejection', (err) => {
-    console.error('UNHANDLED REJECTION! 💥 Shutting down...');
+process.on("unhandledRejection", (err) => {
+    console.error("UNHANDLED REJECTION! 💥 Shutting down...");
     console.error(err.name, err.message, err.stack);
     server.close(() => {
         process.exit(1);
     });
 });
 // Handle SIGTERM (e.g., from Docker, Heroku, or K8s)
-process.on('SIGTERM', () => {
-    console.log('SIGTERM RECEIVED. Shutting down gracefully.');
+process.on("SIGTERM", () => {
+    console.log("SIGTERM RECEIVED. Shutting down gracefully.");
     server.close(() => {
-        console.log('💥 Process terminated!');
+        console.log("💥 Process terminated!");
     });
 });
