@@ -9,3 +9,15 @@ export type TAdminUserListQuery = {
   sortOrder?: "asc" | "desc" | string;
 };
 
+export type TAdminManifestationListQuery = {
+  page?: string;
+  limit?: string;
+  search?: string;
+  userId?: string;
+  sortBy?: "createdAt" | "updatedAt" | "name" | string;
+  sortOrder?: "asc" | "desc" | string;
+};
+
+export type TAdminMoodAnalyticsQuery = {
+  days?: string;
+};

@@ -25,4 +25,8 @@ router.patch(
   AdminController.updateUserRole,
 );
 
+router.get("/content/journals", AdminController.getAllJournals);
+router.get("/content/manifestations", AdminController.getAllManifestations);
+router.get("/content/moods/analytics", AdminController.getMoodAnalytics);
+
 export const AdminRoutes = router;

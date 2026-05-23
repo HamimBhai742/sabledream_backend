@@ -4,6 +4,7 @@ import catchAsyncFn from "../../utils/catchAsyncFn";
 import sendResponse from "../../utils/sendResponse";
 import { AdminService } from "./admin.service";
 import AppError from "../../error/AppError";
+import { TJournalQuery } from "../../interface/journal.interface";
 
 type AuthRequest = Request & {
   user?: {
@@ -105,4 +106,41 @@ export const AdminController = {
   getUserDetails,
   updateUserStatus,
   updateUserRole,
+  getAllJournals: catchAsyncFn(async (req: Request, res: Response) => {
+    const result = await AdminService.getAllJournals(req.query as TJournalQuery);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "All journals retrieved successfully",
+      meta: (result as any).meta,
+      data: (result as any).data,
+    });
+  }),
+
+  getAllManifestations: catchAsyncFn(async (req: Request, res: Response) => {
+    const result = await AdminService.getManifestations(req.query as any);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "All manifestations retrieved successfully",
+      meta: result.meta as any,
+      data: result.data as any,
+    });
+  }),
+
+  getMoodAnalytics: catchAsyncFn(async (req: Request, res: Response) => {
+    const daysParam = req.query.days;
+    const days = typeof daysParam === "string" ? Number(daysParam) : 30;
+
+    const result = await AdminService.getMoodAnalytics(days);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Mood analytics retrieved successfully",
+      data: result as any,
+    });
+  }),
 };

@@ -1,8 +1,8 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import globalErrorHandler from './app/middleware/globalErrorHandler';
-import { rootRouter } from './app/routes';
+import express, { Application, Request, Response, NextFunction } from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import globalErrorHandler from "./app/middleware/globalErrorHandler";
+import { rootRouter } from "./app/routes";
 // Initialize the Express application
 const app: Application = express();
 
@@ -10,10 +10,12 @@ const app: Application = express();
 // Global Middlewares
 // ==========================================
 // Enable Cross-Origin Resource Sharing
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+    credentials: true,
+  }),
+);
 
 // Parse cookies and populate req.cookies
 app.use(cookieParser());
@@ -28,24 +30,23 @@ app.use(express.urlencoded({ extended: true }));
 // Application Routes
 // ==========================================
 // Health Check Endpoint
-app.get('/health', (req: Request, res: Response) => {
+app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    message: 'API is running smoothly!',
+    message: "API is running smoothly!",
     timestamp: new Date().toISOString(),
   });
 });
 
-app.get('/', (req: Request, res: Response) => {
+app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    message: 'Welcome to Sabledream API'
+    message: "Welcome to Sabledream API",
   });
 });
 
 // Mount modular routes here
-app.use('/api/v1', rootRouter);
-
+app.use("/api/v1", rootRouter);
 
 // ==========================================
 // Error Handling
@@ -54,7 +55,7 @@ app.use('/api/v1', rootRouter);
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(404).json({
     success: false,
-    message: `API endpoint not found: ${req.method} ${req.originalUrl}`
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
   });
 });
 

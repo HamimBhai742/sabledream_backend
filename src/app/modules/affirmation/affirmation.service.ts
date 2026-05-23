@@ -145,6 +145,7 @@ const getAllAffirmations = async (filters: {
   goal?: string;
   mood?: string;
   timeOfDay?: string;
+  search?: string;
 }) => {
   // Automatically run seeder if database is empty
   await seedAffirmations();
@@ -154,6 +155,16 @@ const getAllAffirmations = async (filters: {
   if (filters.goal) whereClause.goal = filters.goal;
   if (filters.mood) whereClause.mood = filters.mood;
   if (filters.timeOfDay) whereClause.timeOfDay = filters.timeOfDay;
+  if (filters.search) {
+    whereClause.OR = [
+      { text: { contains: filters.search, mode: "insensitive" } },
+      { goal: { contains: filters.search, mode: "insensitive" } },
+      { category: { contains: filters.search, mode: "insensitive" } },
+      { mood: { contains: filters.search, mode: "insensitive" } },
+      { timeOfDay: { contains: filters.search, mode: "insensitive" } },
+      { tags: { has: filters.search } },
+    ];
+  }
 
   const affirmations = await prisma.affirmation.findMany({
     where: whereClause,
@@ -326,6 +337,47 @@ const getAffirmationById = async (id: string) => {
   return affirmation;
 };
 
+const updateAffirmation = async (
+  id: string,
+  data: Partial<{
+    text: string;
+    category: string;
+    goal: string;
+    mood: string;
+    timeOfDay: string;
+    subStatements: string[];
+    tags: string[];
+  }>,
+) => {
+  const existing = await prisma.affirmation.findUnique({ where: { id } });
+  if (!existing) {
+    throw new AppError(httpStatus.NOT_FOUND, "Affirmation not found");
+  }
+
+  return prisma.affirmation.update({
+    where: { id },
+    data: {
+      ...(data.text !== undefined ? { text: data.text } : {}),
+      ...(data.category !== undefined ? { category: data.category } : {}),
+      ...(data.goal !== undefined ? { goal: data.goal } : {}),
+      ...(data.mood !== undefined ? { mood: data.mood } : {}),
+      ...(data.timeOfDay !== undefined ? { timeOfDay: data.timeOfDay } : {}),
+      ...(data.subStatements !== undefined ? { subStatements: data.subStatements } : {}),
+      ...(data.tags !== undefined ? { tags: data.tags } : {}),
+    },
+  });
+};
+
+const deleteAffirmation = async (id: string) => {
+  const existing = await prisma.affirmation.findUnique({ where: { id } });
+  if (!existing) {
+    throw new AppError(httpStatus.NOT_FOUND, "Affirmation not found");
+  }
+
+  await prisma.affirmation.delete({ where: { id } });
+  return null;
+};
+
 export const AffirmationService = {
   getAllAffirmations,
   getTodayAffirmation,
@@ -334,4 +386,6 @@ export const AffirmationService = {
   getSavedAffirmations,
   createAffirmation,
   getAffirmationById,
+  updateAffirmation,
+  deleteAffirmation,
 };

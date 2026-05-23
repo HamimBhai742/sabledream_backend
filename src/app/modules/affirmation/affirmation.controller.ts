@@ -6,13 +6,14 @@ import AppError from "../../error/AppError";
 import { AffirmationService } from "./affirmation.service";
 
 const getAllAffirmations = catchAsyncFn(async (req: Request, res: Response) => {
-  const { category, goal, mood, timeOfDay } = req.query;
+  const { category, goal, mood, timeOfDay, search } = req.query;
 
   const result = await AffirmationService.getAllAffirmations({
     category: category as string,
     goal: goal as string,
     mood: mood as string,
     timeOfDay: timeOfDay as string,
+    search: search as string,
   });
 
   sendResponse(res, {
@@ -116,6 +117,30 @@ const getAffirmationById = catchAsyncFn(async (req: Request, res: Response) => {
   });
 });
 
+const updateAffirmation = catchAsyncFn(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await AffirmationService.updateAffirmation(id as string, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Affirmation updated successfully",
+    data: result,
+  });
+});
+
+const deleteAffirmation = catchAsyncFn(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  await AffirmationService.deleteAffirmation(id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Affirmation deleted successfully",
+    data: null,
+  });
+});
+
 export const AffirmationController = {
   getAllAffirmations,
   getTodayAffirmation,
@@ -124,4 +149,6 @@ export const AffirmationController = {
   getSavedAffirmations,
   createAffirmation,
   getAffirmationById,
+  updateAffirmation,
+  deleteAffirmation,
 };

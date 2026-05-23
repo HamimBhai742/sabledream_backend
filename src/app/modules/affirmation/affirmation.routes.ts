@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { AffirmationController } from "./affirmation.controller";
 import checkAuth from "../../middleware/checkAuth";
+import validateRequest from "../../middleware/validateRequest";
+import { AffirmationValidation } from "./affirmation.validation";
 
 const router = Router();
 
@@ -14,9 +16,23 @@ router.post("/:id/save", checkAuth("user", "admin"), AffirmationController.saveA
 router.delete("/:id/unsave", checkAuth("user", "admin"), AffirmationController.unsaveAffirmation);
 
 // Admin-only creation
-router.post("/", checkAuth("admin"), AffirmationController.createAffirmation);
+router.post(
+  "/admin/create",
+  checkAuth("admin"),
+  validateRequest(AffirmationValidation.createAffirmationSchema),
+  AffirmationController.createAffirmation,
+);
+
+router.patch(
+  "/admin/:id",
+  checkAuth("admin"),
+  validateRequest(AffirmationValidation.updateAffirmationSchema),
+  AffirmationController.updateAffirmation,
+);
+
+router.delete("/admin/:id", checkAuth("admin"), AffirmationController.deleteAffirmation);
 
 // Must be last (otherwise it catches routes like `/saved`)
-router.get("/:id", AffirmationController.getAffirmationById);
+router.get("/admin/:id", AffirmationController.getAffirmationById);
 
 export const AffirmationRoutes = router;

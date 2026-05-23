@@ -1,6 +1,8 @@
 import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import AppError from "../../error/AppError";
+import { JournalService } from "../journal/journal.service";
+import { TJournalQuery } from "../../interface/journal.interface";
 
 const formatDateUTC = (date: Date): string => date.toISOString().slice(0, 10);
 
@@ -41,6 +43,13 @@ const toSeries = (dateKeys: string[], map: Map<string, number>) => {
     date,
     value: Number((map.get(date) ?? 0).toFixed(2)),
   }));
+};
+
+const parsePageLimit = (pageRaw: unknown, limitRaw: unknown, maxLimit = 200) => {
+  const page = Math.max(Number(pageRaw || 1), 1);
+  const limit = Math.min(Math.max(Number(limitRaw || 20), 1), maxLimit);
+  const skip = (page - 1) * limit;
+  return { page, limit, skip };
 };
 
 export const AdminService = {
@@ -141,9 +150,7 @@ export const AdminService = {
   },
 
   async getUsers(query: import("./admin.types").TAdminUserListQuery) {
-    const page = Math.max(Number(query.page || 1), 1);
-    const limit = Math.min(Math.max(Number(query.limit || 20), 1), 200);
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = parsePageLimit(query.page, query.limit, 200);
 
     const search = (query.search || "").trim();
     const status = (query.status || "").trim();
@@ -289,5 +296,117 @@ export const AdminService = {
     });
 
     return updated;
+  },
+
+  async getAllJournals(query: TJournalQuery) {
+    return JournalService.getAllJournals(query);
+  },
+
+  async getManifestations(query: import("./admin.types").TAdminManifestationListQuery) {
+    const { page, limit, skip } = parsePageLimit(query.page, query.limit, 200);
+
+    const search = (query.search || "").trim();
+    const userId = (query.userId || "").trim();
+
+    const allowedSortBy = new Set(["createdAt", "updatedAt", "name"]);
+    const sortBy = allowedSortBy.has(String(query.sortBy)) ? String(query.sortBy) : "createdAt";
+    const sortOrder = query.sortOrder === "asc" ? "asc" : "desc";
+
+    const where: any = {};
+    if (userId) where.userId = userId;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { category: { contains: search, mode: "insensitive" } },
+        { state: { contains: search, mode: "insensitive" } },
+        { feeling: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [total, manifestations] = await Promise.all([
+      prisma.manifestation.count({ where }),
+      prisma.manifestation.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder } as any,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      }),
+    ]);
+
+    const totalPage = Math.ceil(total / limit);
+    return { meta: { page, limit, total, totalPage }, data: manifestations };
+  },
+
+  async getMoodAnalytics(days: number) {
+    const safeDays = Number.isFinite(days) ? Math.min(Math.max(Math.trunc(days), 1), 365) : 30;
+
+    const now = new Date();
+    const endExclusive = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
+    );
+    const startInclusive = new Date(endExclusive);
+    startInclusive.setUTCDate(startInclusive.getUTCDate() - safeDays);
+
+    const dateKeys = buildDateKeys(startInclusive, safeDays);
+
+    const moods = await prisma.mood.findMany({
+      where: { date: { gte: startInclusive, lt: endExclusive } },
+      select: { date: true, energy: true, userId: true, activities: true },
+      orderBy: { date: "asc" },
+    });
+
+    const totalEntries = moods.length;
+    const uniqueUsers = new Set(moods.map((m) => m.userId)).size;
+
+    const dailyTotalMap = new Map<string, number>();
+    const energyCountsMap = new Map<string, number>();
+    const activityCountsMap = new Map<string, number>();
+
+    for (const mood of moods) {
+      const dateKey = formatDateUTC(mood.date);
+      dailyTotalMap.set(dateKey, (dailyTotalMap.get(dateKey) ?? 0) + 1);
+
+      const energyKey = String(mood.energy || "Unknown");
+      energyCountsMap.set(energyKey, (energyCountsMap.get(energyKey) ?? 0) + 1);
+
+      for (const activity of mood.activities || []) {
+        const key = String(activity || "").trim();
+        if (!key) continue;
+        activityCountsMap.set(key, (activityCountsMap.get(key) ?? 0) + 1);
+      }
+    }
+
+    const energyCounts = [...energyCountsMap.entries()]
+      .map(([energy, count]) => ({ energy, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const topActivities = [...activityCountsMap.entries()]
+      .map(([activity, count]) => ({ activity, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    return {
+      range: {
+        days: safeDays,
+        from: startInclusive.toISOString(),
+        to: endExclusive.toISOString(),
+        timezone: "UTC",
+      },
+      totals: {
+        totalEntries,
+        uniqueUsers,
+      },
+      energyCounts,
+      topActivities,
+      charts: {
+        dailyMoods: toSeries(dateKeys, dailyTotalMap),
+      },
+    };
   },
 };
