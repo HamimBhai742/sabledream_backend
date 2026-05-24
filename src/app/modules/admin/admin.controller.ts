@@ -100,12 +100,45 @@ const updateUserRole = catchAsyncFn(async (req: AuthRequest, res: Response) => {
   });
 });
 
+const deleteUser = catchAsyncFn(async (req: AuthRequest, res: Response) => {
+  const adminUserId = req.user?.userId;
+  const { userId } = req.params;
+
+  if (!adminUserId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  await AdminService.deleteUser(adminUserId, userId as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User deleted successfully",
+    data: null,
+  });
+});
+
+const deleteJournal = catchAsyncFn(async (req: Request, res: Response) => {
+  const { journalId } = req.params;
+
+  await AdminService.deleteJournal(journalId as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Journal deleted successfully",
+    data: null,
+  });
+});
+
 export const AdminController = {
   getOverview,
   getUsers,
   getUserDetails,
   updateUserStatus,
   updateUserRole,
+  deleteUser,
+  deleteJournal,
   getAllJournals: catchAsyncFn(async (req: Request, res: Response) => {
     const result = await AdminService.getAllJournals(req.query as TJournalQuery);
 

@@ -12,6 +12,7 @@ router.get("/overview", AdminController.getOverview);
 
 router.get("/users", AdminController.getUsers);
 router.get("/users/:userId", AdminController.getUserDetails);
+router.delete("/users/:userId", AdminController.deleteUser);
 
 router.patch(
   "/users/:userId/status",
@@ -26,6 +27,7 @@ router.patch(
 );
 
 router.get("/content/journals", AdminController.getAllJournals);
+router.delete("/content/journals/:journalId", AdminController.deleteJournal);
 router.get("/content/manifestations", AdminController.getAllManifestations);
 router.get("/content/moods/analytics", AdminController.getMoodAnalytics);
 

@@ -3,6 +3,7 @@ import httpStatus from "http-status";
 import AppError from "../../error/AppError";
 import { JournalService } from "../journal/journal.service";
 import { TJournalQuery } from "../../interface/journal.interface";
+import { deleteFromCloudinary } from "../../utils/uploadCloudinary";
 
 const formatDateUTC = (date: Date): string => date.toISOString().slice(0, 10);
 
@@ -57,6 +58,26 @@ const parseDateOrUndefined = (value?: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return undefined;
   return date;
+};
+
+const getProfileImagePublicId = (image?: string | null) => {
+  if (!image?.includes("cloudinary.com")) return null;
+
+  const parts = image.split("/");
+  const filename = parts[parts.length - 1];
+  const publicId = filename?.split(".")[0];
+
+  return publicId ? `profile_pictures/${publicId}` : null;
+};
+
+const deleteCloudinaryAsset = async (publicId?: string | null) => {
+  if (!publicId) return;
+
+  try {
+    await deleteFromCloudinary(publicId);
+  } catch (error) {
+    console.error(`Failed to delete Cloudinary asset ${publicId}:`, error);
+  }
 };
 
 export const AdminService = {
@@ -303,6 +324,97 @@ export const AdminService = {
     });
 
     return updated;
+  },
+
+  async deleteUser(adminUserId: string, userId: string) {
+    if (adminUserId === userId) {
+      throw new AppError(httpStatus.BAD_REQUEST, "You cannot delete your own account");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        journals: {
+          select: {
+            imageKey: true,
+          },
+        },
+        manifestations: {
+          select: {
+            imageKey: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    await Promise.all([
+      deleteCloudinaryAsset(getProfileImagePublicId(user.image)),
+      ...user.journals.map((journal) => deleteCloudinaryAsset(journal.imageKey)),
+      ...user.manifestations.map((manifestation) =>
+        deleteCloudinaryAsset(manifestation.imageKey),
+      ),
+    ]);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.savedAffirmation.deleteMany({ where: { userId } });
+      await tx.notification.deleteMany({ where: { userId } });
+      await tx.reminder.deleteMany({ where: { userId } });
+      await tx.mood.deleteMany({ where: { userId } });
+      await tx.manifestation.deleteMany({ where: { userId } });
+      await tx.subscription.deleteMany({ where: { userId } });
+      await tx.transaction.deleteMany({ where: { userId } });
+      await tx.journal.deleteMany({ where: { userId } });
+      await tx.journalCategory.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+    });
+
+    return null;
+  },
+
+  async deleteJournal(journalId: string) {
+    const journal = await prisma.journal.findUnique({
+      where: { id: journalId },
+    });
+
+    if (!journal) {
+      throw new AppError(httpStatus.NOT_FOUND, "Journal not found");
+    }
+
+    await deleteCloudinaryAsset(journal.imageKey);
+
+    await prisma.$transaction(async (tx) => {
+      for (const categoryId of journal.categoryIds) {
+        const category = await tx.journalCategory.findFirst({
+          where: {
+            id: categoryId,
+            userId: journal.userId,
+          },
+        });
+
+        if (category) {
+          await tx.journalCategory.update({
+            where: {
+              id: categoryId,
+            },
+            data: {
+              journalIds: category.journalIds.filter((id) => id !== journalId),
+            },
+          });
+        }
+      }
+
+      await tx.journal.delete({
+        where: {
+          id: journalId,
+        },
+      });
+    });
+
+    return null;
   },
 
   async getAllJournals(query: TJournalQuery) {
