@@ -29,6 +29,7 @@ router.patch(
 router.get("/content/journals", AdminController.getAllJournals);
 router.delete("/content/journals/:journalId", AdminController.deleteJournal);
 router.get("/content/manifestations", AdminController.getAllManifestations);
+router.delete("/content/manifestations/:manifestationId", AdminController.deleteManifestation);
 router.get("/content/moods/analytics", AdminController.getMoodAnalytics);
 
 router.get("/subscriptions/active", AdminController.getActiveSubscriptions);

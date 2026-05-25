@@ -131,6 +131,19 @@ const deleteJournal = catchAsyncFn(async (req: Request, res: Response) => {
   });
 });
 
+const deleteManifestation = catchAsyncFn(async (req: Request, res: Response) => {
+  const { manifestationId } = req.params;
+
+  await AdminService.deleteManifestation(manifestationId as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Manifestation deleted successfully",
+    data: null,
+  });
+});
+
 export const AdminController = {
   getOverview,
   getUsers,
@@ -139,6 +152,7 @@ export const AdminController = {
   updateUserRole,
   deleteUser,
   deleteJournal,
+  deleteManifestation,
   getAllJournals: catchAsyncFn(async (req: Request, res: Response) => {
     const result = await AdminService.getAllJournals(req.query as TJournalQuery);
 

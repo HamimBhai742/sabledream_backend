@@ -417,6 +417,26 @@ export const AdminService = {
     return null;
   },
 
+  async deleteManifestation(manifestationId: string) {
+    const manifestation = await prisma.manifestation.findUnique({
+      where: { id: manifestationId },
+    });
+
+    if (!manifestation) {
+      throw new AppError(httpStatus.NOT_FOUND, "Manifestation not found");
+    }
+
+    await deleteCloudinaryAsset(manifestation.imageKey);
+
+    await prisma.manifestation.delete({
+      where: {
+        id: manifestationId,
+      },
+    });
+
+    return null;
+  },
+
   async getAllJournals(query: TJournalQuery) {
     return JournalService.getAllJournals(query);
   },
