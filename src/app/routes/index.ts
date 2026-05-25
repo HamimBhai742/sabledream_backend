@@ -11,6 +11,7 @@ import { SubscriptionRoutes } from "../modules/subscription/subscription.routes"
 import { PublicDataRoutes } from "../modules/public-data/public-data.routes";
 import { ChatRoutes } from "../modules/chat/chat.routes";
 import { AdminRoutes } from "../modules/admin/admin.routes";
+import { BooksRoutes } from "../modules/books/books.routes";
 
 
 export const rootRouter = Router();
@@ -51,6 +52,10 @@ const routes = [
   {
     path: "/subscriptions",
     route: SubscriptionRoutes,
+  },
+  {
+    path: "/books",
+    route: BooksRoutes,
   },
   {
     path: "/",

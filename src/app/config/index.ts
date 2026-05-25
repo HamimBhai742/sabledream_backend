@@ -19,6 +19,9 @@ export default {
   aiService: {
     apiKey: process.env.AI_SERVICE_API_KEY as string,
   },
+  googleBooks: {
+    apiKey: process.env.GOOGLE_BOOKS_API_KEY as string,
+  },
   aknChat: {
     baseUrl: (process.env.AKN_CHAT_BASE_URL as string) || "http://187.127.83.15:8900",
     apiKey: process.env.AKN_CHAT_API_KEY as string,
