@@ -32,7 +32,9 @@ router.patch(
 
 router.delete("/admin/:id", checkAuth("admin"), AffirmationController.deleteAffirmation);
 
-// Must be last (otherwise it catches routes like `/saved`)
 router.get("/admin/:id", AffirmationController.getAffirmationById);
+
+// Must be last (otherwise it catches routes like `/saved`)
+router.get("/:id", AffirmationController.getAffirmationById);
 
 export const AffirmationRoutes = router;

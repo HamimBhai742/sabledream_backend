@@ -140,6 +140,42 @@ const seedAffirmations = async () => {
   }
 };
 
+const formatAffirmation = (affirmation: any) => ({
+  ...affirmation,
+  reflection: {
+    title: "Reflection",
+    text: affirmation.goal,
+  },
+  affirmation: {
+    title: "Affirmation",
+    text: affirmation.text,
+    subStatements: affirmation.subStatements,
+    tags: affirmation.tags,
+  },
+  detailTitle: "Affirmation",
+});
+
+const groupAffirmationsByReflection = (affirmations: any[]) => {
+  const grouped: Record<string, { goal: string; reflection: string; count: number; items: any[] }> = {};
+
+  for (const affirmation of affirmations) {
+    const reflection = affirmation.goal;
+    if (!grouped[reflection]) {
+      grouped[reflection] = {
+        goal: reflection,
+        reflection,
+        count: 0,
+        items: [],
+      };
+    }
+
+    grouped[reflection].count += 1;
+    grouped[reflection].items.push(formatAffirmation(affirmation));
+  }
+
+  return Object.values(grouped);
+};
+
 const getAllAffirmations = async (filters: {
   category?: string;
   goal?: string;
@@ -171,7 +207,11 @@ const getAllAffirmations = async (filters: {
     orderBy: { createdAt: "desc" },
   });
 
-  return affirmations;
+  return {
+    total: affirmations.length,
+    raw: affirmations.map(formatAffirmation),
+    grouped: groupAffirmationsByReflection(affirmations),
+  };
 };
 
 const getTodayAffirmation = async () => {
@@ -190,7 +230,7 @@ const getTodayAffirmation = async () => {
   const dayOfYear = Math.floor(diff / oneDay);
 
   const index = dayOfYear % affirmations.length;
-  return affirmations[index];
+  return formatAffirmation(affirmations[index]);
 };
 
 const saveAffirmation = async (userId: string, affirmationId: string) => {
@@ -283,25 +323,12 @@ const getSavedAffirmations = async (
     orderBy: { createdAt: "desc" },
   });
 
-  // Group by Goal
-  const grouped: Record<string, { goal: string; count: number; items: any[] }> = {};
-  for (const s of saved) {
-    const goal = s.affirmation.goal;
-    if (!grouped[goal]) {
-      grouped[goal] = {
-        goal,
-        count: 0,
-        items: [],
-      };
-    }
-    grouped[goal].count += 1;
-    grouped[goal].items.push(s.affirmation);
-  }
+  const affirmations = saved.map((s) => s.affirmation);
 
   return {
     total: saved.length,
-    raw: saved.map((s) => s.affirmation),
-    grouped: Object.values(grouped),
+    raw: affirmations.map(formatAffirmation),
+    grouped: groupAffirmationsByReflection(affirmations),
   };
 };
 
@@ -322,7 +349,7 @@ const createAffirmation = async (data: {
     data,
   });
 
-  return affirmation;
+  return formatAffirmation(affirmation);
 };
 
 const getAffirmationById = async (id: string) => {
@@ -334,7 +361,7 @@ const getAffirmationById = async (id: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Affirmation not found");
   }
 
-  return affirmation;
+  return formatAffirmation(affirmation);
 };
 
 const updateAffirmation = async (
@@ -354,7 +381,7 @@ const updateAffirmation = async (
     throw new AppError(httpStatus.NOT_FOUND, "Affirmation not found");
   }
 
-  return prisma.affirmation.update({
+  const updatedAffirmation = await prisma.affirmation.update({
     where: { id },
     data: {
       ...(data.text !== undefined ? { text: data.text } : {}),
@@ -366,6 +393,8 @@ const updateAffirmation = async (
       ...(data.tags !== undefined ? { tags: data.tags } : {}),
     },
   });
+
+  return formatAffirmation(updatedAffirmation);
 };
 
 const deleteAffirmation = async (id: string) => {
