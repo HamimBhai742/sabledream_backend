@@ -18,6 +18,7 @@ const createManifestation = async (userId: string, data: any, file?: Express.Mul
     data: {
       userId,
       ...manifestationData,
+      status: 'In process',
       imageUrl,
       imageKey,
     },
@@ -70,6 +71,16 @@ const updateManifestation = async (userId: string, manifestationId: string, data
 
   const manifestationData = typeof data.data === 'string' ? JSON.parse(data.data) : data;
 
+  let status = manifestationData.status;
+  if (manifestationData.state !== undefined) {
+    const stateStr = String(manifestationData.state).toLowerCase().trim();
+    if (stateStr === 'manifestation has fully arrived' || stateStr === 'manifestation has fully arrived successfully') {
+      status = 'Done';
+    } else {
+      status = 'In process';
+    }
+  }
+
   return await prisma.manifestation.update({
     where: {
       id: manifestationId,
@@ -77,6 +88,7 @@ const updateManifestation = async (userId: string, manifestationId: string, data
     },
     data: {
       ...manifestationData,
+      ...(status !== undefined ? { status } : {}),
       imageUrl,
       imageKey,
     },

@@ -59,6 +59,7 @@ model Manifestation {
   lifeChange  String? // How this would change my life
   category    String?
   state       String?
+  status      String  @default("In process")
   feeling     String? // Feeling when realized
   imageUrl    String?
   imageKey    String?
@@ -196,6 +197,7 @@ model Reminder {
   userId         String   @db.ObjectId
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type           String   // "journal", "mood", "affirmation"
+  enabled        Boolean  @default(true)
   dailyEnabled   Boolean  @default(false)
   weeklyEnabled  Boolean  @default(false)
   monthlyEnabled Boolean  @default(false)

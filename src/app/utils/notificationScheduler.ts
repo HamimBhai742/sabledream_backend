@@ -48,9 +48,10 @@ export const startNotificationScheduler = () => {
         `[SCHEDULER] Checking reminders for Time: ${currentTime}, Day of Month: ${currentDayOfMonth}, Day of Week: ${currentDayOfWeek}`
       );
 
-      // Fetch all reminders that match the current time
+      // Fetch all reminders that match the current time and are enabled
       const reminders = await prisma.reminder.findMany({
         where: {
+          enabled: true,
           time: currentTime,
           user: {
             fcmToken: {

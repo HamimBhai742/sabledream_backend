@@ -16,6 +16,7 @@ const getReminderSettings = async (userId: string) => {
     const initData = missingTypes.map((type) => ({
       userId,
       type,
+      enabled: true,
       dailyEnabled: false,
       weeklyEnabled: false,
       monthlyEnabled: false,
@@ -41,6 +42,7 @@ const updateReminderSettings = async (
   userId: string,
   type: string,
   data: {
+    enabled?: boolean;
     dailyEnabled?: boolean;
     weeklyEnabled?: boolean;
     monthlyEnabled?: boolean;
@@ -80,6 +82,17 @@ const updateReminderSettings = async (
     }
   }
 
+  // Validate time format (24-hour HH:mm)
+  if (data.time !== undefined) {
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    if (!timeRegex.test(data.time)) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Time must be in 24-hour HH:mm format (e.g., 08:00)"
+      );
+    }
+  }
+
   const reminder = await prisma.reminder.upsert({
     where: {
       userId_type: {
@@ -88,6 +101,7 @@ const updateReminderSettings = async (
       },
     },
     update: {
+      enabled: data.enabled,
       dailyEnabled: data.dailyEnabled,
       weeklyEnabled: data.weeklyEnabled,
       monthlyEnabled: data.monthlyEnabled,
@@ -98,6 +112,7 @@ const updateReminderSettings = async (
     create: {
       userId,
       type,
+      enabled: data.enabled ?? true,
       dailyEnabled: data.dailyEnabled ?? false,
       weeklyEnabled: data.weeklyEnabled ?? false,
       monthlyEnabled: data.monthlyEnabled ?? false,
