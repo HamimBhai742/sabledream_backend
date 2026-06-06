@@ -2,10 +2,48 @@ import cron from "node-cron";
 import { prisma } from "../lib/prisma";
 import { sendPushNotification } from "./sendNotification";
 
-// Helper to get day name in uppercase
-const getDayOfWeekName = (date: Date): string => {
-  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-  return days[date.getDay()];
+const defaultTimeZone = "Asia/Dhaka";
+
+type ReminderLocalParts = {
+  time: string;
+  dayOfMonth: number;
+  dayOfWeek: string;
+  isLastDayOfMonth: boolean;
+};
+
+const getReminderLocalParts = (date: Date, timeZone: string): ReminderLocalParts | null => {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      weekday: "short",
+    });
+
+    const parts = formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+
+    const year = Number(parts.year);
+    const month = Number(parts.month);
+    const dayOfMonth = Number(parts.day);
+    const lastDayOfMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+    return {
+      time: `${parts.hour}:${parts.minute}`,
+      dayOfMonth,
+      dayOfWeek: parts.weekday.toUpperCase(),
+      isLastDayOfMonth: dayOfMonth === lastDayOfMonth,
+    };
+  } catch (error) {
+    console.error(`[SCHEDULER] Invalid reminder timezone "${timeZone}":`, error);
+    return null;
+  }
 };
 
 // Helper to fetch a dynamic affirmation from the database
@@ -21,7 +59,7 @@ const getRandomAffirmation = async (goal?: string) => {
     const skip = Math.floor(Math.random() * count);
     const affirmations = await prisma.affirmation.findMany({
       where: whereClause,
-      skip: skip,
+      skip,
       take: 1,
     });
     return affirmations[0];
@@ -32,27 +70,17 @@ const getRandomAffirmation = async (goal?: string) => {
 };
 
 export const startNotificationScheduler = () => {
-  // Run every minute to check and trigger scheduled notifications
+  // Run every minute to check and trigger scheduled notifications.
   cron.schedule("* * * * *", async () => {
     try {
       const now = new Date();
-      // Format hour and minute to match time format, e.g. "08:00"
-      const hours = String(now.getHours()).padStart(2, "0");
-      const minutes = String(now.getMinutes()).padStart(2, "0");
-      const currentTime = `${hours}:${minutes}`;
 
-      const currentDayOfMonth = now.getDate();
-      const currentDayOfWeek = getDayOfWeekName(now);
+      console.log(`[SCHEDULER] Checking reminders at ${now.toISOString()}`);
 
-      console.log(
-        `[SCHEDULER] Checking reminders for Time: ${currentTime}, Day of Month: ${currentDayOfMonth}, Day of Week: ${currentDayOfWeek}`
-      );
-
-      // Fetch all reminders that match the current time and are enabled
+      // Reminder time is compared in each user's timezone, not the server timezone.
       const reminders = await prisma.reminder.findMany({
         where: {
           enabled: true,
-          time: currentTime,
           user: {
             fcmToken: {
               not: null,
@@ -68,14 +96,19 @@ export const startNotificationScheduler = () => {
         if (!reminder.user.fcmToken) continue;
 
         const fcmToken = reminder.user.fcmToken;
+        const localParts = getReminderLocalParts(now, reminder.timeZone || defaultTimeZone);
+        if (!localParts || localParts.time !== reminder.time) continue;
 
-        // Build notifications based on type and frequency enabled flags
+        const monthlyDue =
+          reminder.daysOfMonth.includes(localParts.dayOfMonth) ||
+          (reminder.monthlyLastDayEnabled && localParts.isLastDayOfMonth);
+
         if (reminder.type === "journal") {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
-              "She's waiting for you ✍️",
-              "A daily reminder to open your journal. The woman you are becoming wrote something for you — come read it.",
+              "She's waiting for you",
+              "A daily reminder to open your journal. The woman you are becoming wrote something for you - come read it.",
               {
                 screen: "journal",
                 frequency: "daily",
@@ -83,10 +116,10 @@ export const startNotificationScheduler = () => {
               reminder.userId
             );
           }
-          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(currentDayOfWeek)) {
+          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
             await sendPushNotification(
               fcmToken,
-              "Your week in reflection 🌿",
+              "Your week in reflection",
               "A weekly prompt to look back at your entries, celebrate your consistency, and set your intention for the week ahead.",
               {
                 screen: "journal",
@@ -95,26 +128,24 @@ export const startNotificationScheduler = () => {
               reminder.userId
             );
           }
-          if (reminder.daysOfMonth && reminder.daysOfMonth.includes(currentDayOfMonth)) {
-            if (reminder.monthlyEnabled) {
-              await sendPushNotification(
-                fcmToken,
-                "A month of becoming 🗓️",
-                "At the end of every month, a reminder to revisit your journey — how much you have grown, healed, and stepped into yourself.",
-                {
-                  screen: "journal",
-                  frequency: "monthly",
-                },
-                reminder.userId
-              );
-            }
+          if (reminder.monthlyEnabled && monthlyDue) {
+            await sendPushNotification(
+              fcmToken,
+              "A month of becoming",
+              "A monthly reminder to revisit your journey - how much you have grown, healed, and stepped into yourself.",
+              {
+                screen: "journal",
+                frequency: "monthly",
+              },
+              reminder.userId
+            );
           }
         } else if (reminder.type === "mood") {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
-              "How are you feeling today? 💖",
-              "A daily midday check-in to stay connected to your inner world. Name the feeling — that is the first step of healing.",
+              "How are you feeling today?",
+              "A daily check-in to stay connected to your inner world. Name the feeling - that is the first step of healing.",
               {
                 screen: "mood",
                 frequency: "daily",
@@ -122,11 +153,11 @@ export const startNotificationScheduler = () => {
               reminder.userId
             );
           }
-          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(currentDayOfWeek)) {
+          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
             await sendPushNotification(
               fcmToken,
-              "Your mood this week 🌊",
-              "A weekly overview of your emotional patterns. The woman who feels deeply, heals deeply — see your journey unfold.",
+              "Your mood this week",
+              "A weekly overview of your emotional patterns. The woman who feels deeply, heals deeply - see your journey unfold.",
               {
                 screen: "mood",
                 frequency: "weekly",
@@ -134,22 +165,19 @@ export const startNotificationScheduler = () => {
               reminder.userId
             );
           }
-          if (reminder.daysOfMonth && reminder.daysOfMonth.includes(currentDayOfMonth)) {
-            if (reminder.monthlyEnabled) {
-              await sendPushNotification(
-                fcmToken,
-                "Moments of becoming 🌸",
-                "Every emotion you named this month was a step into your becoming. A monthly look at the emotional growth you have made.",
-                {
-                  screen: "mood",
-                  frequency: "monthly",
-                },
-                reminder.userId
-              );
-            }
+          if (reminder.monthlyEnabled && monthlyDue) {
+            await sendPushNotification(
+              fcmToken,
+              "Moments of becoming",
+              "Every emotion you named this month was a step into your becoming. A monthly look at the emotional growth you have made.",
+              {
+                screen: "mood",
+                frequency: "monthly",
+              },
+              reminder.userId
+            );
           }
         } else if (reminder.type === "affirmation") {
-          // Dynamic Affirmation Loading to show actual dynamic texts inside push notifications!
           const dynamicAffirmation = await getRandomAffirmation();
           const affirmationText = dynamicAffirmation
             ? `"${dynamicAffirmation.text}"`
@@ -158,7 +186,7 @@ export const startNotificationScheduler = () => {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
-              "Your highest self believes in you 💌",
+              "Your highest self believes in you",
               `Today's Affirmation: ${affirmationText}`,
               {
                 screen: "affirmation",
@@ -168,10 +196,10 @@ export const startNotificationScheduler = () => {
               reminder.userId
             );
           }
-          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(currentDayOfWeek)) {
+          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
             await sendPushNotification(
               fcmToken,
-              "Words for your becoming ✨",
+              "Words for your becoming",
               `Weekly Inspiration: ${affirmationText}`,
               {
                 screen: "affirmation",
@@ -181,20 +209,18 @@ export const startNotificationScheduler = () => {
               reminder.userId
             );
           }
-          if (reminder.daysOfMonth && reminder.daysOfMonth.includes(currentDayOfMonth)) {
-            if (reminder.monthlyEnabled) {
-              await sendPushNotification(
-                fcmToken,
-                "A love letter from her 💗",
-                `Monthly Reflection: ${affirmationText}`,
-                {
-                  screen: "affirmation",
-                  frequency: "monthly",
-                  affirmationId: dynamicAffirmation?.id || "",
-                },
-                reminder.userId
-              );
-            }
+          if (reminder.monthlyEnabled && monthlyDue) {
+            await sendPushNotification(
+              fcmToken,
+              "A love letter from her",
+              `Monthly Reflection: ${affirmationText}`,
+              {
+                screen: "affirmation",
+                frequency: "monthly",
+                affirmationId: dynamicAffirmation?.id || "",
+              },
+              reminder.userId
+            );
           }
         }
       }

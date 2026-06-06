@@ -2,8 +2,23 @@ import { prisma } from "../../lib/prisma";
 import AppError from "../../error/AppError";
 import httpStatus from "http-status";
 
+type ReminderFrequency = "daily" | "weekly" | "monthly" | "off";
+
+const allowedTypes = ["journal", "mood", "affirmation"];
+const allowedDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const defaultTimeZone = "Asia/Dhaka";
+
+const isValidTimeZone = (timeZone: string) => {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const getReminderSettings = async (userId: string) => {
-  const reminderTypes = ["journal", "mood", "affirmation"];
+  const reminderTypes = allowedTypes;
 
   const existingReminders = await prisma.reminder.findMany({
     where: { userId },
@@ -20,9 +35,11 @@ const getReminderSettings = async (userId: string) => {
       dailyEnabled: false,
       weeklyEnabled: false,
       monthlyEnabled: false,
+      monthlyLastDayEnabled: false,
       daysOfMonth: [],
       daysOfWeek: [],
       time: "08:00",
+      timeZone: defaultTimeZone,
     }));
 
     await prisma.reminder.createMany({
@@ -46,12 +63,14 @@ const updateReminderSettings = async (
     dailyEnabled?: boolean;
     weeklyEnabled?: boolean;
     monthlyEnabled?: boolean;
+    monthlyLastDayEnabled?: boolean;
     daysOfMonth?: number[];
     daysOfWeek?: string[];
     time?: string;
+    timeZone?: string;
+    frequency?: ReminderFrequency;
   }
 ) => {
-  const allowedTypes = ["journal", "mood", "affirmation"];
   if (!allowedTypes.includes(type)) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -70,7 +89,6 @@ const updateReminderSettings = async (
 
   // Normalize daysOfWeek to uppercase and validate
   if (data.daysOfWeek) {
-    const allowedDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
     data.daysOfWeek = data.daysOfWeek.map((day) => day.toUpperCase());
     for (const day of data.daysOfWeek) {
       if (!allowedDays.includes(day)) {
@@ -93,6 +111,29 @@ const updateReminderSettings = async (
     }
   }
 
+  if (data.timeZone !== undefined && !isValidTimeZone(data.timeZone)) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid timeZone. Use an IANA timezone value, e.g. Asia/Dhaka or America/New_York"
+    );
+  }
+
+  if (data.frequency !== undefined && !["daily", "weekly", "monthly", "off"].includes(data.frequency)) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid frequency. Allowed values: daily, weekly, monthly, off"
+    );
+  }
+
+  const frequencyUpdate =
+    data.frequency === undefined
+      ? {}
+      : {
+          dailyEnabled: data.frequency === "daily",
+          weeklyEnabled: data.frequency === "weekly",
+          monthlyEnabled: data.frequency === "monthly",
+        };
+
   const reminder = await prisma.reminder.upsert({
     where: {
       userId_type: {
@@ -105,20 +146,25 @@ const updateReminderSettings = async (
       dailyEnabled: data.dailyEnabled,
       weeklyEnabled: data.weeklyEnabled,
       monthlyEnabled: data.monthlyEnabled,
+      ...frequencyUpdate,
+      monthlyLastDayEnabled: data.monthlyLastDayEnabled,
       daysOfMonth: data.daysOfMonth,
       daysOfWeek: data.daysOfWeek,
       time: data.time,
+      timeZone: data.timeZone,
     },
     create: {
       userId,
       type,
       enabled: data.enabled ?? true,
-      dailyEnabled: data.dailyEnabled ?? false,
-      weeklyEnabled: data.weeklyEnabled ?? false,
-      monthlyEnabled: data.monthlyEnabled ?? false,
+      dailyEnabled: frequencyUpdate.dailyEnabled ?? data.dailyEnabled ?? false,
+      weeklyEnabled: frequencyUpdate.weeklyEnabled ?? data.weeklyEnabled ?? false,
+      monthlyEnabled: frequencyUpdate.monthlyEnabled ?? data.monthlyEnabled ?? false,
+      monthlyLastDayEnabled: data.monthlyLastDayEnabled ?? false,
       daysOfMonth: data.daysOfMonth ?? [],
       daysOfWeek: data.daysOfWeek ?? [],
       time: data.time ?? "08:00",
+      timeZone: data.timeZone ?? defaultTimeZone,
     },
   });
 
