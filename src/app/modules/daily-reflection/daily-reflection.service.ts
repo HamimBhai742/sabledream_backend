@@ -125,6 +125,7 @@ const importCSV = async (csvBuffer: Buffer) => {
   let successCount = 0;
   let failCount = 0;
   const errors: string[] = [];
+  const upsertedDates: string[] = [];
 
   for (let idx = 1; idx < parsedRows.length; idx++) {
     const values = parsedRows[idx];
@@ -214,9 +215,25 @@ const importCSV = async (csvBuffer: Buffer) => {
         },
       });
       successCount++;
+      upsertedDates.push(normalizedRow.date);
     } catch (err: any) {
       errors.push(`Row ${idx + 1} (${normalizedRow.date}): Database error - ${err.message}`);
       failCount++;
+    }
+  }
+
+  // Sync database: delete reflections whose dates are no longer present in the uploaded CSV
+  if (successCount > 0) {
+    try {
+      await prisma.dailyReflection.deleteMany({
+        where: {
+          date: {
+            notIn: upsertedDates,
+          },
+        },
+      });
+    } catch (err: any) {
+      errors.push(`Sync Error: Failed to clean up removed rows from database - ${err.message}`);
     }
   }
 
