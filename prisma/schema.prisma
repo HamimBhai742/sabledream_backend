@@ -276,3 +276,29 @@ model Transaction {
   @@index([userId])
   @@index([createdAt])
 }
+
+model DailyReflection {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  date           String   @unique // Format: MM/DD/YYYY
+  reflection     String
+  affirmation    String
+  journalPrompt1 String
+  journalPrompt2 String
+  
+  book1Title     String?
+  book1Author    String?
+  book1VolumeId  String?
+  book1Link      String?
+  book1MatchStatus String?
+
+  book2Title     String?
+  book2Author    String?
+  book2VolumeId  String?
+  book2Link      String?
+  book2MatchStatus String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+

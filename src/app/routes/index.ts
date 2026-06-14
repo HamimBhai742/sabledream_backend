@@ -12,6 +12,8 @@ import { PublicDataRoutes } from "../modules/public-data/public-data.routes";
 import { ChatRoutes } from "../modules/chat/chat.routes";
 import { AdminRoutes } from "../modules/admin/admin.routes";
 import { BooksRoutes } from "../modules/books/books.routes";
+import { DailyReflectionRoutes } from "../modules/daily-reflection/daily-reflection.routes";
+
 
 
 export const rootRouter = Router();
@@ -68,6 +70,10 @@ const routes = [
   {
     path: "/admin",
     route: AdminRoutes,
+  },
+  {
+    path: "/daily-reflections",
+    route: DailyReflectionRoutes,
   },
 ];
 
