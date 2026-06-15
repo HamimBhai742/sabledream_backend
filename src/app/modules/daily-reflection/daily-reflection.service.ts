@@ -1,3 +1,6 @@
+import { DailyReflection } from "@prisma/client";
+import httpStatus from "http-status";
+import AppError from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import { BooksService } from "../books/books.service";
 
@@ -371,10 +374,43 @@ const deleteDailyReflection = async (id: string) => {
   });
 };
 
+const updateDailyReflection = async (id: string, payload: Partial<DailyReflection>) => {
+  const existingReflection = await prisma.dailyReflection.findUnique({
+    where: { id },
+  });
+
+  if (!existingReflection) {
+    throw new AppError(httpStatus.NOT_FOUND, "Daily reflection not found");
+  }
+
+  if (payload.date) {
+    payload.date = normalizeDateString(payload.date);
+
+    const duplicate = await prisma.dailyReflection.findUnique({
+      where: { date: payload.date },
+    });
+
+    if (duplicate && duplicate.id !== id) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        "A daily reflection already exists for this date"
+      );
+    }
+  }
+
+  const result = await prisma.dailyReflection.update({
+    where: { id },
+    data: payload,
+  });
+
+  return result;
+};
+
 export const DailyReflectionService = {
   importCSV,
   getAllDailyReflections,
   getDailyReflectionByDate,
   deleteDailyReflection,
+  updateDailyReflection,
 };
 

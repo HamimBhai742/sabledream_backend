@@ -67,9 +67,23 @@ const deleteDailyReflection = catchAsyncFn(async (req: Request, res: Response) =
   });
 });
 
+const updateDailyReflection = catchAsyncFn(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const result = await DailyReflectionService.updateDailyReflection(id as string, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Daily reflection updated successfully",
+    data: result,
+  });
+});
+
 export const DailyReflectionController = {
   uploadCSV,
   getAllDailyReflections,
   getDailyReflectionByDate,
   deleteDailyReflection,
+  updateDailyReflection,
 };

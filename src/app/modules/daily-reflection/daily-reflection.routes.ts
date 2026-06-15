@@ -2,6 +2,8 @@ import { Router } from "express";
 import { DailyReflectionController } from "./daily-reflection.controller";
 import checkAuth from "../../middleware/checkAuth";
 import { uploadCSV } from "../../middleware/upload";
+import validateRequest from "../../middleware/validateRequest";
+import { DailyReflectionValidation } from "./daily-reflection.validation";
 
 const router = Router();
 
@@ -23,6 +25,13 @@ router.delete(
   "/:id",
   checkAuth("admin"),
   DailyReflectionController.deleteDailyReflection
+);
+
+router.patch(
+  "/:id",
+  checkAuth("admin"),
+  validateRequest(DailyReflectionValidation.updateDailyReflectionSchema),
+  DailyReflectionController.updateDailyReflection
 );
 
 // Public endpoint
