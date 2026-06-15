@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma";
+import { BooksService } from "../books/books.service";
 
 // Parse CSV text respecting quotes, double-quotes, commas, and linebreaks inside cells
 function parseCSV(csvText: string): string[][] {
@@ -331,9 +332,38 @@ const getDailyReflectionByDate = async (dateStr?: string) => {
     targetDate = `${month}/${day}/${year}`;
   }
 
-  return await prisma.dailyReflection.findUnique({
+  const reflection = await prisma.dailyReflection.findUnique({
     where: { date: targetDate },
   });
+
+  if (!reflection) {
+    return null;
+  }
+
+  let book1Details = null;
+  let book2Details = null;
+
+  if (reflection.book1VolumeId) {
+    try {
+      book1Details = await BooksService.getBookById(reflection.book1VolumeId);
+    } catch (error) {
+      console.error(`Failed to fetch book1 details for volume ${reflection.book1VolumeId}:`, error);
+    }
+  }
+
+  if (reflection.book2VolumeId) {
+    try {
+      book2Details = await BooksService.getBookById(reflection.book2VolumeId);
+    } catch (error) {
+      console.error(`Failed to fetch book2 details for volume ${reflection.book2VolumeId}:`, error);
+    }
+  }
+
+  return {
+    ...reflection,
+    book1Details,
+    book2Details,
+  };
 };
 const deleteDailyReflection = async (id: string) => {
   return await prisma.dailyReflection.delete({
