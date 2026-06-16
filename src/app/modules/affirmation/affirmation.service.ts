@@ -218,6 +218,50 @@ const getTodayAffirmation = async () => {
   // Automatically run seeder if database is empty
   await seedAffirmations();
 
+  // Check today's daily reflection first
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const year = today.getFullYear();
+  const targetDate = `${month}/${day}/${year}`;
+
+  try {
+    const dailyReflection = await prisma.dailyReflection.findUnique({
+      where: { date: targetDate },
+    });
+
+    if (dailyReflection) {
+      const subStatements = [
+        dailyReflection.journalPrompt1,
+        dailyReflection.journalPrompt2,
+      ].filter(Boolean);
+
+      return {
+        id: dailyReflection.id,
+        text: dailyReflection.affirmation,
+        category: "Affirmation",
+        goal: dailyReflection.reflection,
+        mood: "CALM",
+        timeOfDay: "Morning",
+        subStatements,
+        tags: ["Daily"],
+        reflection: {
+          title: "Reflection",
+          text: dailyReflection.reflection,
+        },
+        affirmation: {
+          title: "Affirmation",
+          text: dailyReflection.affirmation,
+          subStatements,
+          tags: ["Daily"],
+        },
+        detailTitle: "Affirmation",
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching today's daily reflection:", error);
+  }
+
   const affirmations = await prisma.affirmation.findMany();
   if (affirmations.length === 0) {
     return null;
@@ -239,6 +283,15 @@ const saveAffirmation = async (userId: string, affirmationId: string) => {
   });
 
   if (!affirmation) {
+    // Check if it's a daily reflection
+    const dailyReflection = await prisma.dailyReflection.findUnique({
+      where: { id: affirmationId },
+    });
+
+    if (dailyReflection) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Daily reflections cannot be saved as affirmations");
+    }
+
     throw new AppError(httpStatus.NOT_FOUND, "Affirmation not found");
   }
 

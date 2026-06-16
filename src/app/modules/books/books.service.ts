@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import config from "../../config";
 import AppError from "../../error/AppError";
+import { prisma } from "../../lib/prisma";
 import {
   BookListQuery,
   BookResponse,
@@ -132,6 +133,49 @@ const getBooks = async (query: BookListQuery) => {
   const limit = normalizeNumber(query.limit, 10, MAX_LIMIT);
   const search = query.search?.trim() || DEFAULT_SEARCH_QUERY;
   const startIndex = (page - 1) * limit;
+
+  // Check today's daily reflection for book suggestions
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const year = today.getFullYear();
+  const targetDate = `${month}/${day}/${year}`;
+
+  try {
+    const dailyReflection = await prisma.dailyReflection.findUnique({
+      where: { date: targetDate },
+    });
+
+    if (dailyReflection && (dailyReflection.book1VolumeId || dailyReflection.book2VolumeId)) {
+      const bookIds = [dailyReflection.book1VolumeId, dailyReflection.book2VolumeId].filter(
+        (id): id is string => Boolean(id)
+      );
+
+      const booksData = [];
+      for (const bookId of bookIds) {
+        try {
+          const book = await getBookById(bookId);
+          booksData.push(book);
+        } catch (error) {
+          console.error(`Failed to fetch details for daily reflection book: ${bookId}`, error);
+        }
+      }
+
+      if (booksData.length > 0) {
+        return {
+          meta: {
+            page: 1,
+            limit: Math.max(booksData.length, limit),
+            total: booksData.length,
+            totalPage: 1,
+          },
+          data: booksData,
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching daily reflection books:", error);
+  }
 
   const url = new URL(GOOGLE_BOOKS_BASE_URL);
   url.searchParams.set("q", search);
