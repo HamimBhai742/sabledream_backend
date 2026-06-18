@@ -110,7 +110,17 @@ export const ChatService = {
     return requestAknChat<any>(`/api/v1/chat/usage/${encodeURIComponent(userId)}`, { method: "GET" });
   },
 
-  async getAllUsersUsage() {
+  async getAllUsersUsage(query: { page?: string; limit?: string }) {
+    const page = Math.max(Number(query.page || 1), 1);
+    const limit = Math.min(Math.max(Number(query.limit || 10), 1), 100);
+    const skip = (page - 1) * limit;
+
+    const total = await prisma.user.count({
+      where: {
+        role: "user",
+      },
+    });
+
     const users = await prisma.user.findMany({
       where: {
         role: "user",
@@ -121,6 +131,8 @@ export const ChatService = {
         email: true,
         image: true,
       },
+      skip,
+      take: limit,
     });
 
     const usagePromises = users.map(async (user) => {
@@ -144,6 +156,17 @@ export const ChatService = {
       }
     });
 
-    return Promise.all(usagePromises);
+    const data = await Promise.all(usagePromises);
+    const totalPage = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPage,
+      },
+    };
   },
 };

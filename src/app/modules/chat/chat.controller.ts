@@ -121,13 +121,15 @@ const getUsage = catchAsyncFn(async (req: Request, res: Response) => {
 });
 
 const getAllUsersUsage = catchAsyncFn(async (req: Request, res: Response) => {
-  const result = await ChatService.getAllUsersUsage();
+  const { page, limit } = req.query as { page?: string; limit?: string };
+  const { data, meta } = await ChatService.getAllUsersUsage({ page, limit });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "All users' chat usage retrieved successfully",
-    data: result,
+    data,
+    meta,
   });
 });
 
