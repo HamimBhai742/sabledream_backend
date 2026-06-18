@@ -16,6 +16,8 @@ router.post(
 router.get("/history/:user_id", checkAuth("user", "admin"), ChatController.getHistory);
 router.delete("/history/:user_id", checkAuth("user", "admin"), ChatController.deleteHistory);
 router.get("/memory/:user_id", checkAuth("user", "admin"), ChatController.getMemory);
+router.get("/usage", checkAuth("admin"), ChatController.getAllUsersUsage);
+router.get("/usage/:user_id", checkAuth("admin"), ChatController.getUsage);
 
 export const ChatRoutes = router;
 

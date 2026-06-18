@@ -314,6 +314,38 @@ const updateFcmToken = async (userId: string, fcmToken: string) => {
   return userWithoutPassword;
 };
 
+const deleteProfileImage = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // If the user has an uploaded image on Cloudinary, delete it
+  if (user.image && user.image.includes("cloudinary.com")) {
+    try {
+      const parts = user.image.split("/");
+      const filename = parts[parts.length - 1];
+      const publicId = filename.split(".")[0];
+      await deleteFromCloudinary(`profile_pictures/${publicId}`);
+    } catch (err) {
+      console.error("Failed to delete profile image from Cloudinary:", err);
+    }
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      image: null,
+    },
+  });
+
+  const { password, ...userWithoutPassword } = updatedUser;
+  return userWithoutPassword;
+};
+
 export const UserService = {
   updateProfile,
   changePassword,
@@ -321,5 +353,7 @@ export const UserService = {
   deleteAccount,
   updatePrivacySettings,
   updateFcmToken,
+  deleteProfileImage,
 };
+
 

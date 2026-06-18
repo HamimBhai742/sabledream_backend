@@ -133,6 +133,23 @@ const updateFcmToken = catchAsyncFn(async (req: Request, res: Response) => {
   });
 });
 
+const deleteProfileImage = catchAsyncFn(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  const result = await UserService.deleteProfileImage(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Profile picture deleted successfully",
+    data: result,
+  });
+});
+
 export const UserController = {
   updateProfile,
   changePassword,
@@ -140,5 +157,6 @@ export const UserController = {
   deleteAccount,
   updatePrivacySettings,
   updateFcmToken,
+  deleteProfileImage,
 };
 

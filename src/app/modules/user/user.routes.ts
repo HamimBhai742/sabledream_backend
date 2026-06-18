@@ -30,6 +30,12 @@ router.delete(
   UserController.deleteAccount
 );
 
+router.delete(
+  "/delete-profile-image",
+  checkAuth("user", "admin"),
+  UserController.deleteProfileImage
+);
+
 router.patch(
   "/privacy-settings",
   checkAuth("user", "admin"),

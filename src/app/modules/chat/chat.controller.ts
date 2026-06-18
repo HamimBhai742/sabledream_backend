@@ -102,9 +102,40 @@ const getMemory = catchAsyncFn(async (req: Request, res: Response) => {
   });
 });
 
+const getUsage = catchAsyncFn(async (req: Request, res: Response) => {
+  const raw = isTruthy(req.query.raw);
+  const userId = resolveUserId(req, req.params.user_id);
+  const result = await ChatService.getUsage(userId);
+
+  if (raw) {
+    res.status(httpStatus.OK).json(result);
+    return;
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Chat usage retrieved successfully",
+    data: result,
+  });
+});
+
+const getAllUsersUsage = catchAsyncFn(async (req: Request, res: Response) => {
+  const result = await ChatService.getAllUsersUsage();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All users' chat usage retrieved successfully",
+    data: result,
+  });
+});
+
 export const ChatController = {
   sendMessage,
   getHistory,
   deleteHistory,
   getMemory,
+  getUsage,
+  getAllUsersUsage,
 };

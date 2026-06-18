@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import AppError from "../../error/AppError";
 import config from "../../config";
+import { prisma } from "../../lib/prisma";
 import { AknChatMessageResponse } from "./chat.types";
 
 const withTrailingSlash = (value: string) => (value.endsWith("/") ? value : `${value}/`);
@@ -103,5 +104,46 @@ export const ChatService = {
 
   async getMemory(userId: string) {
     return requestAknChat<any>(`/api/v1/chat/memory/${encodeURIComponent(userId)}`, { method: "GET" });
+  },
+
+  async getUsage(userId: string) {
+    return requestAknChat<any>(`/api/v1/chat/usage/${encodeURIComponent(userId)}`, { method: "GET" });
+  },
+
+  async getAllUsersUsage() {
+    const users = await prisma.user.findMany({
+      where: {
+        role: "user",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+      },
+    });
+
+    const usagePromises = users.map(async (user) => {
+      try {
+        const usage = await this.getUsage(user.id);
+        return {
+          user,
+          usage,
+        };
+      } catch (err) {
+        return {
+          user,
+          usage: {
+            user_id: user.id,
+            total_tokens: 0,
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            message_count: 0,
+          },
+        };
+      }
+    });
+
+    return Promise.all(usagePromises);
   },
 };
