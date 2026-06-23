@@ -121,8 +121,14 @@ const getUsage = catchAsyncFn(async (req: Request, res: Response) => {
 });
 
 const getAllUsersUsage = catchAsyncFn(async (req: Request, res: Response) => {
-  const { page, limit } = req.query as { page?: string; limit?: string };
-  const { data, meta } = await ChatService.getAllUsersUsage({ page, limit });
+  const { page, limit, sortBy, sortOrder, month } = req.query as {
+    page?: string;
+    limit?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    month?: string;
+  };
+  const { data, meta } = await ChatService.getAllUsersUsage({ page, limit, sortBy, sortOrder, month });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -133,6 +139,88 @@ const getAllUsersUsage = catchAsyncFn(async (req: Request, res: Response) => {
   });
 });
 
+const updateUserTokenLimit = catchAsyncFn(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
+  const adminEmail = req.user?.email || "admin@sabledream.com";
+  const { userId } = req.params;
+  const { monthlyTokenLimit } = req.body;
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  const result = await ChatService.updateUserTokenLimit(adminId, adminEmail, userId as string, monthlyTokenLimit);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User monthly token limit updated successfully",
+    data: result,
+  });
+});
+
+const getGlobalTokenCap = catchAsyncFn(async (req: Request, res: Response) => {
+  const result = await ChatService.getGlobalTokenCap();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Global monthly token cap retrieved successfully",
+    data: result,
+  });
+});
+
+const updateGlobalTokenCap = catchAsyncFn(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
+  const adminEmail = req.user?.email || "admin@sabledream.com";
+  const { globalTokenCap } = req.body;
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  const result = await ChatService.updateGlobalTokenCap(adminId, adminEmail, globalTokenCap);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Global monthly token cap updated successfully",
+    data: result,
+  });
+});
+
+const getAuditLogs = catchAsyncFn(async (req: Request, res: Response) => {
+  const result = await ChatService.getAuditLogs();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Limit update audit logs retrieved successfully",
+    data: result,
+  });
+});
+
+const getUserUsageHistory = catchAsyncFn(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const result = await ChatService.getUserUsageHistory(userId as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User monthly usage history retrieved successfully",
+    data: result,
+  });
+});
+
+const exportUsageToCsv = catchAsyncFn(async (req: Request, res: Response) => {
+  const { month } = req.query as { month?: string };
+  const csvContent = await ChatService.exportUsageToCsv(month);
+
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="chat-usage-${month || "current"}.csv"`);
+  res.status(httpStatus.OK).send(csvContent);
+});
+
 export const ChatController = {
   sendMessage,
   getHistory,
@@ -140,4 +228,10 @@ export const ChatController = {
   getMemory,
   getUsage,
   getAllUsersUsage,
+  updateUserTokenLimit,
+  getGlobalTokenCap,
+  updateGlobalTokenCap,
+  getAuditLogs,
+  getUserUsageHistory,
+  exportUsageToCsv,
 };

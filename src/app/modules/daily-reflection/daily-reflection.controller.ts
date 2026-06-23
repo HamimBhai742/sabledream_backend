@@ -21,13 +21,15 @@ const uploadCSV = catchAsyncFn(async (req: Request, res: Response) => {
 });
 
 const getAllDailyReflections = catchAsyncFn(async (req: Request, res: Response) => {
-  const { page, limit, search, bookStatus } = req.query;
+  const { page, limit, search, bookStatus, sortBy, sortOrder } = req.query;
 
   const result = await DailyReflectionService.getAllDailyReflections({
     page: page ? Number(page) : undefined,
     limit: limit ? Number(limit) : undefined,
     search: search as string,
     bookStatus: bookStatus as string,
+    sortBy: sortBy as string,
+    sortOrder: sortOrder as "asc" | "desc",
   });
 
   sendResponse(res, {

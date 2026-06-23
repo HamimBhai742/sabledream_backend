@@ -253,10 +253,14 @@ const getAllDailyReflections = async (query: {
   limit?: number;
   search?: string;
   bookStatus?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }) => {
   const page = Number(query.page) || 1;
   const limit = Number(query.limit) || 10;
   const skip = (page - 1) * limit;
+  const sortBy = query.sortBy || "createdAt";
+  const sortOrder = query.sortOrder || "desc";
 
   const where: any = {};
   const andConditions: any[] = [];
@@ -296,17 +300,47 @@ const getAllDailyReflections = async (query: {
     where.AND = andConditions;
   }
 
-  const [data, total] = await Promise.all([
-    prisma.dailyReflection.findMany({
+  let data: DailyReflection[];
+  let total: number;
+
+  if (sortBy === "date") {
+    // For chronological sorting of MM/DD/YYYY formatted string dates,
+    // retrieve all matching entries, sort in memory, and apply pagination.
+    const allData = await prisma.dailyReflection.findMany({
       where,
-      skip,
-      take: limit,
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    prisma.dailyReflection.count({ where }),
-  ]);
+    });
+    total = allData.length;
+
+    const parseDateString = (dateStr: string): Date => {
+      const parts = dateStr.split("/");
+      const month = Number(parts[0]) || 1;
+      const day = Number(parts[1]) || 1;
+      const year = Number(parts[2]) || 1970;
+      return new Date(year, month - 1, day);
+    };
+
+    allData.sort((a, b) => {
+      const timeA = parseDateString(a.date).getTime();
+      const timeB = parseDateString(b.date).getTime();
+      return sortOrder === "asc" ? timeA - timeB : timeB - timeA;
+    });
+
+    data = allData.slice(skip, skip + limit);
+  } else {
+    // DB-level sorting and pagination
+    const orderByField = ["createdAt", "updatedAt"].includes(sortBy) ? sortBy : "createdAt";
+    [data, total] = await Promise.all([
+      prisma.dailyReflection.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          [orderByField]: sortOrder,
+        },
+      }),
+      prisma.dailyReflection.count({ where }),
+    ]);
+  }
 
   const totalPage = Math.ceil(total / limit);
 

@@ -28,6 +28,12 @@ model User {
   analyticsEnabled           Boolean      @default(true)
   crashReportsEnabled        Boolean      @default(true)
   fcmToken                   String?
+  monthlyTokenLimit          Int          @default(50000)
+  hasSent90Warning           Boolean      @default(false)
+  hasSent100Warning          Boolean      @default(false)
+  lastProxyTokens            Int          @default(0)
+  lastProxyPromptTokens      Int          @default(0)
+  lastProxyCompletionTokens  Int          @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -299,6 +305,43 @@ model DailyReflection {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model UserMonthlyUsage {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @db.ObjectId
+  monthYear        String   // Format: YYYY-MM
+  tokensUsed       Int      @default(0)
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  messageCount     Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, monthYear])
+  @@index([monthYear])
+}
+
+model AppConfig {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  action      String   // e.g. "UPDATE_USER_LIMIT", "UPDATE_GLOBAL_CAP"
+  adminId     String   @db.ObjectId
+  adminEmail  String
+  targetId    String?  @db.ObjectId
+  targetEmail String?
+  oldValue    String
+  newValue    String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 

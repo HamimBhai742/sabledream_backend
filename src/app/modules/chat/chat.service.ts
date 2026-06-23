@@ -3,6 +3,7 @@ import AppError from "../../error/AppError";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import { AknChatMessageResponse } from "./chat.types";
+import { sendPushNotification } from "../../utils/sendNotification";
 
 const withTrailingSlash = (value: string) => (value.endsWith("/") ? value : `${value}/`);
 
@@ -83,7 +84,55 @@ const requestAknChat = async <T>(path: string, init: RequestInit, timeoutMs?: nu
 
 export const ChatService = {
   async sendMessage(userId: string, message: string) {
-    return requestAknChat<AknChatMessageResponse>(
+    const currentMonth = new Date().toISOString().slice(0, 7);
+
+    // 1. Check global monthly token cap
+    const globalCapConfig = await prisma.appConfig.findUnique({
+      where: { key: "global_monthly_token_cap" },
+    });
+    if (globalCapConfig) {
+      const globalCap = Number(globalCapConfig.value);
+      if (globalCap > 0) {
+        const monthlyUsages = await prisma.userMonthlyUsage.aggregate({
+          where: { monthYear: currentMonth },
+          _sum: { tokensUsed: true },
+        });
+        const totalUsed = monthlyUsages._sum.tokensUsed ?? 0;
+        if (totalUsed >= globalCap) {
+          throw new AppError(
+            httpStatus.FORBIDDEN,
+            "The app-wide monthly token limit has been reached. Please contact administration."
+          );
+        }
+      }
+    }
+
+    // 2. Check individual user limit
+    const userLimitConfig = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthlyTokenLimit: true },
+    });
+    const individualLimit = userLimitConfig?.monthlyTokenLimit ?? 50000;
+
+    const userMonthlyUsage = await prisma.userMonthlyUsage.findUnique({
+      where: {
+        userId_monthYear: {
+          userId,
+          monthYear: currentMonth,
+        },
+      },
+      select: { tokensUsed: true },
+    });
+    const userUsed = userMonthlyUsage?.tokensUsed ?? 0;
+
+    if (userUsed >= individualLimit) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        "You have reached your monthly AI token limit."
+      );
+    }
+
+    const result = await requestAknChat<AknChatMessageResponse>(
       "/api/v1/chat/message",
       {
         method: "POST",
@@ -92,6 +141,35 @@ export const ChatService = {
       },
       config.aknChat.timeoutMs
     );
+
+    // Increment message count for this month
+    await prisma.userMonthlyUsage.upsert({
+      where: {
+        userId_monthYear: {
+          userId,
+          monthYear: currentMonth,
+        },
+      },
+      update: {
+        messageCount: { increment: 1 },
+      },
+      create: {
+        userId,
+        monthYear: currentMonth,
+        messageCount: 1,
+      },
+    });
+
+    // Asynchronously update and check user token limits/warnings
+    this.getUsage(userId)
+      .then(async (usageInfo) => {
+        await this.checkUsageThresholds(userId, usageInfo.total_tokens, usageInfo.monthlyTokenLimit);
+      })
+      .catch((err) => {
+        console.error(`[CHAT] Failed to verify token usage warning thresholds for user ${userId}:`, err);
+      });
+
+    return result;
   },
 
   async getHistory(userId: string) {
@@ -106,57 +184,474 @@ export const ChatService = {
     return requestAknChat<any>(`/api/v1/chat/memory/${encodeURIComponent(userId)}`, { method: "GET" });
   },
 
-  async getUsage(userId: string) {
-    return requestAknChat<any>(`/api/v1/chat/usage/${encodeURIComponent(userId)}`, { method: "GET" });
+  async getUsage(userId: string, monthYear?: string) {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const targetMonth = monthYear || currentMonth;
+
+    // Sync usage data with live proxy first if it is the current month
+    if (targetMonth === currentMonth) {
+      try {
+        const rawUsage = await requestAknChat<any>(`/api/v1/chat/usage/${encodeURIComponent(userId)}`, { method: "GET" });
+        if (rawUsage) {
+          await this.syncUserUsage(userId, rawUsage);
+        }
+      } catch (err) {
+        console.error(`[CHAT] Failed to sync live usage for user ${userId}:`, err);
+      }
+    }
+
+    // Retrieve database record for monthly usage
+    const monthlyUsage = await prisma.userMonthlyUsage.findUnique({
+      where: {
+        userId_monthYear: {
+          userId,
+          monthYear: targetMonth,
+        },
+      },
+    });
+
+    // Retrieve user's configured monthly limit
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthlyTokenLimit: true },
+    });
+
+    const limit = user?.monthlyTokenLimit ?? 50000;
+    const totalTokens = monthlyUsage?.tokensUsed ?? 0;
+    const promptTokens = monthlyUsage?.promptTokens ?? 0;
+    const completionTokens = monthlyUsage?.completionTokens ?? 0;
+    const messageCount = monthlyUsage?.messageCount ?? 0;
+
+    const usagePercentage = limit > 0 ? parseFloat(((totalTokens / limit) * 100).toFixed(2)) : 0;
+
+    let flag = "NORMAL";
+    if (usagePercentage >= 100) {
+      flag = "100%";
+    } else if (usagePercentage >= 90) {
+      flag = "90%";
+    }
+
+    // Dynamic cost forecasting based on a rate of $0.002 per 1000 tokens
+    const costRate = 0.002 / 1000;
+    const costSoFar = totalTokens * costRate;
+
+    const now = new Date();
+    const currentDay = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+    let projectedTokens = totalTokens;
+    if (targetMonth === currentMonth && currentDay > 0) {
+      projectedTokens = Math.round((totalTokens / currentDay) * daysInMonth);
+    }
+    const projectedCost = projectedTokens * costRate;
+
+    return {
+      user_id: userId,
+      total_tokens: totalTokens,
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+      message_count: messageCount,
+      monthlyTokenLimit: limit,
+      usagePercentage,
+      flag,
+      costSoFar: parseFloat(costSoFar.toFixed(4)),
+      projectedTokens,
+      projectedCost: parseFloat(projectedCost.toFixed(4)),
+      monthYear: targetMonth,
+    };
   },
 
-  async getAllUsersUsage(query: { page?: string; limit?: string }) {
+  async syncUserUsage(userId: string, proxyUsage: any) {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        lastProxyTokens: true,
+        lastProxyPromptTokens: true,
+        lastProxyCompletionTokens: true,
+      },
+    });
+
+    if (!user) return;
+
+    const lastT = user.lastProxyTokens ?? 0;
+    const lastP = user.lastProxyPromptTokens ?? 0;
+    const lastC = user.lastProxyCompletionTokens ?? 0;
+
+    const currentT = proxyUsage?.total_tokens ?? 0;
+    const currentP = proxyUsage?.prompt_tokens ?? 0;
+    const currentC = proxyUsage?.completion_tokens ?? 0;
+
+    let deltaT = currentT - lastT;
+    let deltaP = currentP - lastP;
+    let deltaC = currentC - lastC;
+
+    // If delta is negative, the proxy was reset
+    if (deltaT < 0) {
+      deltaT = currentT;
+      deltaP = currentP;
+      deltaC = currentC;
+    }
+
+    if (deltaT > 0 || deltaP > 0 || deltaC > 0) {
+      await prisma.userMonthlyUsage.upsert({
+        where: {
+          userId_monthYear: {
+            userId,
+            monthYear: currentMonth,
+          },
+        },
+        update: {
+          tokensUsed: { increment: deltaT },
+          promptTokens: { increment: deltaP },
+          completionTokens: { increment: deltaC },
+        },
+        create: {
+          userId,
+          monthYear: currentMonth,
+          tokensUsed: deltaT,
+          promptTokens: deltaP,
+          completionTokens: deltaC,
+        },
+      });
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          lastProxyTokens: currentT,
+          lastProxyPromptTokens: currentP,
+          lastProxyCompletionTokens: currentC,
+        },
+      });
+    }
+  },
+
+  async checkUsageThresholds(userId: string, totalTokens: number, limit: number) {
+    const usagePercentage = limit > 0 ? (totalTokens / limit) * 100 : 0;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        fcmToken: true,
+        hasSent90Warning: true,
+        hasSent100Warning: true,
+      },
+    });
+
+    if (!user) return;
+
+    let updateData: any = {};
+    let shouldUpdate = false;
+
+    // Reset warnings if usage drops back below 90%
+    if (usagePercentage < 90) {
+      if (user.hasSent90Warning || user.hasSent100Warning) {
+        updateData.hasSent90Warning = false;
+        updateData.hasSent100Warning = false;
+        shouldUpdate = true;
+      }
+    }
+
+    // Trigger 90% warning push notification
+    if (usagePercentage >= 90 && usagePercentage < 100 && !user.hasSent90Warning) {
+      updateData.hasSent90Warning = true;
+      shouldUpdate = true;
+
+      if (user.fcmToken) {
+        await sendPushNotification(
+          user.fcmToken,
+          "AI Chat Warning",
+          "You have used 90% of your monthly AI token limit.",
+          {
+            screen: "chat",
+            type: "usage_warning_90",
+          },
+          userId
+        );
+      }
+    }
+
+    // Trigger 100% warning push notification
+    if (usagePercentage >= 100 && !user.hasSent100Warning) {
+      updateData.hasSent100Warning = true;
+      shouldUpdate = true;
+
+      if (user.fcmToken) {
+        await sendPushNotification(
+          user.fcmToken,
+          "AI Chat Limit Reached",
+          "You have reached 100% of your monthly AI token limit.",
+          {
+            screen: "chat",
+            type: "usage_warning_100",
+          },
+          userId
+        );
+      }
+    }
+
+    if (shouldUpdate) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+      });
+    }
+  },
+
+  async updateUserTokenLimit(adminId: string, adminEmail: string, targetUserId: string, newLimit: number) {
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { email: true, monthlyTokenLimit: true },
+    });
+
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    const oldLimit = user.monthlyTokenLimit;
+
+    // Update user limit
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: {
+        monthlyTokenLimit: newLimit,
+      },
+    });
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        action: "UPDATE_USER_LIMIT",
+        adminId,
+        adminEmail,
+        targetId: targetUserId,
+        targetEmail: user.email,
+        oldValue: String(oldLimit),
+        newValue: String(newLimit),
+      },
+    });
+
+    return updatedUser;
+  },
+
+  async getGlobalTokenCap() {
+    const configRecord = await prisma.appConfig.findUnique({
+      where: { key: "global_monthly_token_cap" },
+    });
+
+    return {
+      globalTokenCap: configRecord ? Number(configRecord.value) : 10000000, // Default to 10M if not set
+    };
+  },
+
+  async updateGlobalTokenCap(adminId: string, adminEmail: string, newCap: number) {
+    const oldConfig = await prisma.appConfig.findUnique({
+      where: { key: "global_monthly_token_cap" },
+    });
+
+    const oldValue = oldConfig ? oldConfig.value : "10000000";
+
+    const configRecord = await prisma.appConfig.upsert({
+      where: { key: "global_monthly_token_cap" },
+      update: { value: String(newCap) },
+      create: { key: "global_monthly_token_cap", value: String(newCap) },
+    });
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        action: "UPDATE_GLOBAL_CAP",
+        adminId,
+        adminEmail,
+        oldValue,
+        newValue: String(newCap),
+      },
+    });
+
+    return {
+      globalTokenCap: Number(configRecord.value),
+    };
+  },
+
+  async getAuditLogs() {
+    return prisma.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  },
+
+  async getUserUsageHistory(userId: string) {
+    return prisma.userMonthlyUsage.findMany({
+      where: { userId },
+      orderBy: { monthYear: "desc" },
+    });
+  },
+
+  async exportUsageToCsv(monthYear?: string) {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const targetMonth = monthYear || currentMonth;
+
+    const users = await prisma.user.findMany({
+      where: { role: "user" },
+      select: { id: true, name: true, email: true, monthlyTokenLimit: true },
+    });
+
+    const rows = [
+      ["User ID", "Name", "Email", "Month", "Limit", "Tokens Used", "Prompt Tokens", "Completion Tokens", "Messages Count", "Usage Percentage", "Warning Status Flag", "Cost So Far ($)", "Projected Monthly Tokens", "Projected Monthly Cost ($)"]
+    ];
+
+    for (const u of users) {
+      const usage = await this.getUsage(u.id, targetMonth);
+      rows.push([
+        u.id,
+        u.name,
+        u.email,
+        targetMonth,
+        String(usage.monthlyTokenLimit),
+        String(usage.total_tokens),
+        String(usage.prompt_tokens),
+        String(usage.completion_tokens),
+        String(usage.message_count),
+        `${usage.usagePercentage}%`,
+        usage.flag,
+        String(usage.costSoFar),
+        String(usage.projectedTokens),
+        String(usage.projectedCost)
+      ]);
+    }
+
+    const csvContent = rows
+      .map((row) =>
+        row
+          .map((field) => {
+            const cleanField = String(field).replace(/"/g, '""');
+            return `"${cleanField}"`;
+          })
+          .join(",")
+      )
+      .join("\r\n");
+
+    return csvContent;
+  },
+
+  async getAllUsersUsage(query: { page?: string; limit?: string; sortBy?: string; sortOrder?: "asc" | "desc"; month?: string }) {
     const page = Math.max(Number(query.page || 1), 1);
     const limit = Math.min(Math.max(Number(query.limit || 10), 1), 100);
     const skip = (page - 1) * limit;
+    const sortBy = query.sortBy || "name";
+    const sortOrder = query.sortOrder || "asc";
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const targetMonth = query.month || currentMonth;
 
+    // Count total users
     const total = await prisma.user.count({
-      where: {
-        role: "user",
-      },
+      where: { role: "user" },
     });
 
-    const users = await prisma.user.findMany({
-      where: {
-        role: "user",
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-      },
-      skip,
-      take: limit,
-    });
+    let data: any[] = [];
 
-    const usagePromises = users.map(async (user) => {
-      try {
-        const usage = await this.getUsage(user.id);
-        return {
-          user,
-          usage,
-        };
-      } catch (err) {
-        return {
-          user,
-          usage: {
-            user_id: user.id,
-            total_tokens: 0,
-            prompt_tokens: 0,
-            completion_tokens: 0,
-            message_count: 0,
-          },
-        };
-      }
-    });
+    // If sorting by name or email, we can sort directly in Prisma query
+    const dbSortFields = ["name", "email"];
+    if (dbSortFields.includes(sortBy)) {
+      const users = await prisma.user.findMany({
+        where: { role: "user" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          monthlyTokenLimit: true,
+        },
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        skip,
+        take: limit,
+      });
 
-    const data = await Promise.all(usagePromises);
+      const usagePromises = users.map(async (user) => {
+        try {
+          const usage = await this.getUsage(user.id, targetMonth);
+          return { user, usage };
+        } catch (err) {
+          return {
+            user,
+            usage: {
+              user_id: user.id,
+              total_tokens: 0,
+              prompt_tokens: 0,
+              completion_tokens: 0,
+              message_count: 0,
+              monthlyTokenLimit: user.monthlyTokenLimit,
+              usagePercentage: 0,
+              flag: "NORMAL",
+              costSoFar: 0,
+              projectedTokens: 0,
+              projectedCost: 0,
+              monthYear: targetMonth,
+            },
+          };
+        }
+      });
+      data = await Promise.all(usagePromises);
+    } else {
+      // For sorting by token usage or percentage, retrieve all matching users,
+      // compute their monthly usage, sort in memory, and slice for pagination.
+      const users = await prisma.user.findMany({
+        where: { role: "user" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          monthlyTokenLimit: true,
+        },
+      });
+
+      const usagePromises = users.map(async (user) => {
+        try {
+          const usage = await this.getUsage(user.id, targetMonth);
+          return { user, usage };
+        } catch (err) {
+          return {
+            user,
+            usage: {
+              user_id: user.id,
+              total_tokens: 0,
+              prompt_tokens: 0,
+              completion_tokens: 0,
+              message_count: 0,
+              monthlyTokenLimit: user.monthlyTokenLimit,
+              usagePercentage: 0,
+              flag: "NORMAL",
+              costSoFar: 0,
+              projectedTokens: 0,
+              projectedCost: 0,
+              monthYear: targetMonth,
+            },
+          };
+        }
+      });
+
+      const allRecords = await Promise.all(usagePromises);
+
+      allRecords.sort((a, b) => {
+        let valA = 0;
+        let valB = 0;
+        if (sortBy === "tokensUsed") {
+          valA = a.usage.total_tokens;
+          valB = b.usage.total_tokens;
+        } else if (sortBy === "usagePercentage") {
+          valA = a.usage.usagePercentage;
+          valB = b.usage.usagePercentage;
+        }
+
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      });
+
+      data = allRecords.slice(skip, skip + limit);
+    }
+
     const totalPage = Math.ceil(total / limit);
 
     return {

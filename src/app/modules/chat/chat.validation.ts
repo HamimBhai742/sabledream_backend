@@ -5,7 +5,17 @@ export const chatMessageSchema = z.object({
   message: z.string().min(1, "message is required").max(4000),
 });
 
+export const updateTokenLimitSchema = z.object({
+  monthlyTokenLimit: z.number().int().nonnegative(),
+});
+
+export const updateGlobalCapSchema = z.object({
+  globalTokenCap: z.number().int().nonnegative(),
+});
+
 export const ChatValidation = {
   chatMessageSchema,
+  updateTokenLimitSchema,
+  updateGlobalCapSchema,
 };
 

@@ -229,4 +229,89 @@ export const startNotificationScheduler = () => {
     }
   });
   console.log("[SCHEDULER] Reminder notifications scheduler started successfully.");
+
+  // Daily push at 4 AM EST from books management table (DailyReflection) to the app.
+  cron.schedule(
+    "0 4 * * *",
+    async () => {
+      try {
+        console.log("[SCHEDULER] Running daily books push notification at 4 AM EST");
+        // Get current date in America/New_York (EST/EDT) timezone formatted as MM/DD/YYYY
+        const todayStr = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date());
+
+        const dailyReflection = await prisma.dailyReflection.findUnique({
+          where: { date: todayStr },
+        });
+
+        if (!dailyReflection) {
+          console.log(`[SCHEDULER] No daily reflection found for date ${todayStr}. Skipping books push notification.`);
+          return;
+        }
+
+        const book1 = dailyReflection.book1Title?.trim();
+        const book2 = dailyReflection.book2Title?.trim();
+
+        if (!book1 && !book2) {
+          console.log(`[SCHEDULER] No books found in daily reflection for date ${todayStr}. Skipping books push notification.`);
+          return;
+        }
+
+        // Build the message body
+        let messageBody = "";
+        if (book1 && book2) {
+          messageBody = `Today's recommended books: "${book1}" and "${book2}".`;
+        } else if (book1) {
+          messageBody = `Today's recommended book: "${book1}".`;
+        } else if (book2) {
+          messageBody = `Today's recommended book: "${book2}".`;
+        }
+
+        const title = "Today's Reading Recommendation";
+
+        // Query all active users who have an FCM token
+        const users = await prisma.user.findMany({
+          where: {
+            fcmToken: {
+              not: null,
+              notIn: [""],
+            },
+            status: "active",
+          },
+          select: {
+            id: true,
+            fcmToken: true,
+          },
+        });
+
+        console.log(`[SCHEDULER] Found ${users.length} active users with FCM tokens to push.`);
+
+        for (const user of users) {
+          if (!user.fcmToken) continue;
+          // Send push notification and log in DB
+          await sendPushNotification(
+            user.fcmToken,
+            title,
+            messageBody,
+            {
+              screen: "books",
+              date: todayStr,
+            },
+            user.id
+          );
+        }
+        console.log("[SCHEDULER] Completed sending daily books push notification.");
+      } catch (error) {
+        console.error("[SCHEDULER] Error sending daily books push notification:", error);
+      }
+    },
+    {
+      timezone: "America/New_York",
+    }
+  );
+  console.log("[SCHEDULER] Daily books push scheduler started successfully.");
 };
