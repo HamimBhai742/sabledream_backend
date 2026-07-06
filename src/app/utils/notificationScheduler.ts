@@ -314,4 +314,25 @@ export const startNotificationScheduler = () => {
     }
   );
   console.log("[SCHEDULER] Daily books push scheduler started successfully.");
+
+  // Monthly cron job at 12:00 AM on the 1st day of every month to reset all users' monthlyTokenLimit to 50000.
+  cron.schedule(
+    "0 0 1 * *",
+    async () => {
+      try {
+        console.log("[SCHEDULER] Running monthly token limit reset job...");
+        const result = await prisma.user.updateMany({
+          data: {
+            monthlyTokenLimit: 50000,
+            hasSent90Warning: false,
+            hasSent100Warning: false,
+          },
+        });
+        console.log(`[SCHEDULER] Successfully reset token limits for ${result.count} users.`);
+      } catch (error) {
+        console.error("[SCHEDULER] Error running monthly token limit reset:", error);
+      }
+    }
+  );
+  console.log("[SCHEDULER] Monthly token limit reset scheduler started successfully.");
 };

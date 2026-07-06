@@ -399,7 +399,7 @@ export const ChatService = {
     }
   },
 
-  async updateUserTokenLimit(adminId: string, adminEmail: string, targetUserId: string, newLimit: number) {
+  async updateUserTokenLimit(adminId: string, adminEmail: string, targetUserId: string, limitIncrease: number) {
     const user = await prisma.user.findUnique({
       where: { id: targetUserId },
       select: { email: true, monthlyTokenLimit: true },
@@ -410,12 +410,13 @@ export const ChatService = {
     }
 
     const oldLimit = user.monthlyTokenLimit;
+    const updatedLimit = oldLimit + limitIncrease;
 
     // Update user limit
     const updatedUser = await prisma.user.update({
       where: { id: targetUserId },
       data: {
-        monthlyTokenLimit: newLimit,
+        monthlyTokenLimit: updatedLimit,
       },
     });
 
@@ -428,7 +429,7 @@ export const ChatService = {
         targetId: targetUserId,
         targetEmail: user.email,
         oldValue: String(oldLimit),
-        newValue: String(newLimit),
+        newValue: String(updatedLimit),
       },
     });
 
