@@ -143,13 +143,13 @@ const updateUserTokenLimit = catchAsyncFn(async (req: Request, res: Response) =>
   const adminId = req.user?.userId;
   const adminEmail = req.user?.email || "admin@sabledream.com";
   const { userId } = req.params;
-  const { monthlyTokenLimit } = req.body;
+  const { type, amount } = req.body;
 
   if (!adminId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
   }
 
-  const result = await ChatService.updateUserTokenLimit(adminId, adminEmail, userId as string, monthlyTokenLimit);
+  const result = await ChatService.updateUserTokenLimit(adminId, adminEmail, userId as string, type, amount);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

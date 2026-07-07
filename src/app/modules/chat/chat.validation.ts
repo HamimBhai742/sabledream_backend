@@ -6,7 +6,8 @@ export const chatMessageSchema = z.object({
 });
 
 export const updateTokenLimitSchema = z.object({
-  monthlyTokenLimit: z.number().int().nonnegative(),
+  type: z.enum(["increase", "decrease"]),
+  amount: z.number().int().positive("Amount must be greater than 0"),
 });
 
 export const updateGlobalCapSchema = z.object({

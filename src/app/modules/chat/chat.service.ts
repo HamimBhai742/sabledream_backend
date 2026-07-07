@@ -399,7 +399,13 @@ export const ChatService = {
     }
   },
 
-  async updateUserTokenLimit(adminId: string, adminEmail: string, targetUserId: string, limitIncrease: number) {
+  async updateUserTokenLimit(
+    adminId: string,
+    adminEmail: string,
+    targetUserId: string,
+    type: "increase" | "decrease",
+    amount: number
+  ) {
     const user = await prisma.user.findUnique({
       where: { id: targetUserId },
       select: { email: true, monthlyTokenLimit: true },
@@ -410,7 +416,11 @@ export const ChatService = {
     }
 
     const oldLimit = user.monthlyTokenLimit;
-    const updatedLimit = oldLimit + limitIncrease;
+    const updatedLimit = type === "increase" ? oldLimit + amount : oldLimit - amount;
+
+    if (updatedLimit < 0) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Resulting monthly token limit cannot be negative");
+    }
 
     // Update user limit
     const updatedUser = await prisma.user.update({
