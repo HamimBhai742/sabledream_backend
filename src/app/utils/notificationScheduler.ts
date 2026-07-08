@@ -107,7 +107,7 @@ export const startNotificationScheduler = () => {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
-              "She's waiting for you",
+              "Pause. Breathe. Reflect. Your Sable Dreams journal is ready when you are. 🪞",
               "A daily reminder to open your journal. The woman you are becoming wrote something for you - come read it.",
               {
                 screen: "journal",
@@ -144,7 +144,7 @@ export const startNotificationScheduler = () => {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
-              "How are you feeling today?",
+              "How is your energy? Select your mood for today 💖",
               "A daily check-in to stay connected to your inner world. Name the feeling - that is the first step of healing.",
               {
                 screen: "mood",
@@ -186,7 +186,7 @@ export const startNotificationScheduler = () => {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
-              "Your highest self believes in you",
+              "A new affirmation has arrived. your moment of centering awaits ✨",
               `Today's Affirmation: ${affirmationText}`,
               {
                 screen: "affirmation",
