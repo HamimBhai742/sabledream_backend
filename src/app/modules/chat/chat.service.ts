@@ -485,6 +485,54 @@ export const ChatService = {
     };
   },
 
+  async updateAllUsersTokenLimit(
+    adminId: string,
+    adminEmail: string,
+    type: "increase" | "decrease",
+    amount: number
+  ) {
+    if (type === "increase") {
+      await prisma.user.updateMany({
+        data: {
+          monthlyTokenLimit: { increment: amount },
+        },
+      });
+    } else if (type === "decrease") {
+      await prisma.user.updateMany({
+        data: {
+          monthlyTokenLimit: { decrement: amount },
+        },
+      });
+
+      // Ensure no negative monthlyTokenLimit
+      await prisma.user.updateMany({
+        where: {
+          monthlyTokenLimit: { lt: 0 },
+        },
+        data: {
+          monthlyTokenLimit: 0,
+        },
+      });
+    }
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        action: "UPDATE_ALL_USERS_LIMIT",
+        adminId,
+        adminEmail,
+        targetEmail: "ALL_USERS",
+        oldValue: type,
+        newValue: String(amount),
+      },
+    });
+
+    return {
+      success: true,
+      message: `Successfully updated all users' token limits (${type} by ${amount})`,
+    };
+  },
+
   async getAuditLogs() {
     return prisma.auditLog.findMany({
       orderBy: { createdAt: "desc" },

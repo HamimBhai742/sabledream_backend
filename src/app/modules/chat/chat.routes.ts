@@ -21,6 +21,13 @@ router.get("/export", checkAuth("admin"), ChatController.exportUsageToCsv);
 router.get("/usage/:user_id", checkAuth("admin"), ChatController.getUsage);
 
 router.patch(
+  "/usage/bulk-limit",
+  checkAuth("admin"),
+  validateRequest(ChatValidation.updateTokenLimitSchema),
+  ChatController.updateAllUsersTokenLimit
+);
+
+router.patch(
   "/usage/:userId/limit",
   checkAuth("admin"),
   validateRequest(ChatValidation.updateTokenLimitSchema),

@@ -212,6 +212,25 @@ const getUserUsageHistory = catchAsyncFn(async (req: Request, res: Response) => 
   });
 });
 
+const updateAllUsersTokenLimit = catchAsyncFn(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
+  const adminEmail = req.user?.email || "admin@sabledream.com";
+  const { type, amount } = req.body;
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  const result = await ChatService.updateAllUsersTokenLimit(adminId, adminEmail, type, amount);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All users' token limits updated successfully",
+    data: result,
+  });
+});
+
 const exportUsageToCsv = catchAsyncFn(async (req: Request, res: Response) => {
   const { month } = req.query as { month?: string };
   const csvContent = await ChatService.exportUsageToCsv(month);
@@ -229,6 +248,7 @@ export const ChatController = {
   getUsage,
   getAllUsersUsage,
   updateUserTokenLimit,
+  updateAllUsersTokenLimit,
   getGlobalTokenCap,
   updateGlobalTokenCap,
   getAuditLogs,
