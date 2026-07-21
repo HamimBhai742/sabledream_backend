@@ -225,4 +225,36 @@ export const AdminController = {
       data: result as any,
     });
   }),
+
+  getUserActivityMetrics: catchAsyncFn(async (req: Request, res: Response) => {
+    const monthYear = req.query.monthYear as string | undefined;
+    const result = await AdminService.getUserActivityMetrics(monthYear);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User activity metrics retrieved successfully",
+      data: result as any,
+    });
+  }),
+
+  getEventLogs: catchAsyncFn(async (req: Request, res: Response) => {
+    const result = await AdminService.getEventLogs(req.query as any);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Event logs retrieved successfully",
+      meta: result.meta as any,
+      data: result.data as any,
+    });
+  }),
+
+  exportEventLogsCSV: catchAsyncFn(async (req: Request, res: Response) => {
+    const csvData = await AdminService.exportEventLogsCSV(req.query as any);
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", 'attachment; filename="event_logs.csv"');
+    res.status(httpStatus.OK).send(csvData);
+  }),
 };

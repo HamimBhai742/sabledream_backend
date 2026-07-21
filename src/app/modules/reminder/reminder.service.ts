@@ -6,7 +6,7 @@ type ReminderFrequency = "daily" | "weekly" | "monthly" | "off";
 
 const allowedTypes = ["journal", "mood", "affirmation"];
 const allowedDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const defaultTimeZone = "Asia/Dhaka";
+const defaultTimeZone = "America/New_York";
 
 const isValidTimeZone = (timeZone: string) => {
   try {
@@ -114,7 +114,7 @@ const updateReminderSettings = async (
   if (data.timeZone !== undefined && !isValidTimeZone(data.timeZone)) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Invalid timeZone. Use an IANA timezone value, e.g. Asia/Dhaka or America/New_York"
+      "Invalid timeZone. Use an IANA timezone value, e.g. America/New_York"
     );
   }
 

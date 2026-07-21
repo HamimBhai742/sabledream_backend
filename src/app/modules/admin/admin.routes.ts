@@ -36,4 +36,8 @@ router.get("/subscriptions/active", AdminController.getActiveSubscriptions);
 router.get("/subscriptions/transactions", AdminController.getTransactions);
 router.get("/subscriptions/summary", AdminController.getSubscriptionSummary);
 
+router.get("/metrics/user-activity", AdminController.getUserActivityMetrics);
+router.get("/metrics/event-logs", AdminController.getEventLogs);
+router.get("/metrics/event-logs/export-csv", AdminController.exportEventLogsCSV);
+
 export const AdminRoutes = router;

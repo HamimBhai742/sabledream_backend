@@ -2,7 +2,7 @@ import cron from "node-cron";
 import { prisma } from "../lib/prisma";
 import { sendPushNotification } from "./sendNotification";
 
-const defaultTimeZone = "Asia/Dhaka";
+const defaultTimeZone = "America/New_York";
 
 type ReminderLocalParts = {
   time: string;

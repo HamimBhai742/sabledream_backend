@@ -11,6 +11,7 @@ import { verifyAppleToken } from "../../utils/apple.token";
 import verifyToken from "../../utils/verifyToken";
 import createToken from "../../utils/createJwtToken";
 import { welcomeSableDreamTemplate } from "../../utils/emailTemplates/signUpSuccess";
+import { generatePermanentUserId, ensurePermanentUserId } from "../../utils/generatePermanentUserId";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -38,12 +39,16 @@ const registerUser = async (payload: any) => {
   // Hash the password
   const hashedPassword = await bcrypt.hash(payload.password, 10);
 
+  // Generate permanent user ID
+  const permanentId = await generatePermanentUserId();
+
   // Create the user
   const newUser = await prisma.user.create({
     data: {
       name: payload.name,
       email: payload.email,
       password: hashedPassword,
+      permanentId,
       isVerified: true, // Auto-verified based on user request (no OTP needed)
     },
   });
@@ -61,8 +66,8 @@ const registerUser = async (payload: any) => {
   await welcomeSableDreamTemplate({
     userName: newUser.name,
     email: newUser.email,
-    joinedAt: new Date().toLocaleString("en-BD", {
-      timeZone: "Asia/Dhaka",
+    joinedAt: new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York",
       year: "numeric",
       month: "long",
       day: "2-digit",
@@ -164,8 +169,8 @@ const forgotPassword = async (email: string) => {
       userName: user.name,
       email,
       resetUrl,
-      requestedAt: new Date().toLocaleString("en-BD", {
-        timeZone: "Asia/Dhaka",
+      requestedAt: new Date().toLocaleString("en-US", {
+        timeZone: "America/New_York",
         year: "numeric",
         month: "long",
         day: "2-digit",
@@ -229,8 +234,8 @@ const resetPassword = async (payload: any) => {
   const data = {
     userName: user.name,
     email,
-    resetAt: new Date().toLocaleString("en-BD", {
-      timeZone: "Asia/Dhaka",
+    resetAt: new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York",
       year: "numeric",
       month: "long",
       day: "2-digit",
@@ -270,6 +275,7 @@ const googleLoginService = async (idToken: string) => {
   });
 
   if (!user) {
+    const permanentId = await generatePermanentUserId();
     user = await prisma.user.create({
       data: {
         email,
@@ -277,17 +283,19 @@ const googleLoginService = async (idToken: string) => {
         image: picture,
         provider: "GOOGLE",
         providerId: sub,
+        permanentId,
         isVerified: true,
       },
     });
   } else {
-    // Optional: existing normal user hole Google info update korte paro
+    const permanentId = await ensurePermanentUserId(user.id, user.permanentId);
     user = await prisma.user.update({
       where: { id: user.id },
       data: {
         provider: user.provider || "GOOGLE",
         providerId: user.providerId || sub,
         image: user.image || picture,
+        permanentId,
         isVerified: true,
       },
     });
@@ -322,22 +330,25 @@ const appleLoginService = async (idToken: string, fullName?: string) => {
   });
 
   if (!user) {
+    const permanentId = await generatePermanentUserId();
     user = await prisma.user.create({
       data: {
         email,
         name: fullName || payload.name || "Apple User",
         provider: "APPLE",
         providerId,
+        permanentId,
         isVerified: true,
       },
     });
   } else {
-    // If the user already exists, update their provider fields if not set
+    const permanentId = await ensurePermanentUserId(user.id, user.permanentId);
     user = await prisma.user.update({
       where: { id: user.id },
       data: {
         provider: user.provider || "APPLE",
         providerId: user.providerId || providerId,
+        permanentId,
         isVerified: true,
       },
     });
@@ -365,6 +376,9 @@ const getMe = async (userId: string) => {
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
+
+  const permanentId = await ensurePermanentUserId(user.id, user.permanentId);
+  user.permanentId = permanentId;
 
   const { password, ...userWithoutPassword } = user;
 

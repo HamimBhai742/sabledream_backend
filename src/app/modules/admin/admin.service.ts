@@ -4,6 +4,20 @@ import AppError from "../../error/AppError";
 import { JournalService } from "../journal/journal.service";
 import { TJournalQuery } from "../../interface/journal.interface";
 import { deleteFromCloudinary } from "../../utils/uploadCloudinary";
+import { ensurePermanentUserId } from "../../utils/generatePermanentUserId";
+import { TIME_OF_DAY_BUCKETS, TARGET_TIMEZONE } from "../../config/activityMetrics.config";
+
+const getHourInTimezone = (date: Date, timezone: string = TARGET_TIMEZONE): number => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "numeric",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const hourPart = parts.find((p) => p.type === "hour");
+  const hour = hourPart ? Number(hourPart.value) : date.getUTCHours();
+  return hour % 24;
+};
 
 const formatDateUTC = (date: Date): string => date.toISOString().slice(0, 10);
 
@@ -177,13 +191,14 @@ export const AdminService = {
     };
   },
 
-  async getUsers(query: import("./admin.types").TAdminUserListQuery) {
+  async getUsers(query: import("./admin.types").TAdminUserListQuery & { capacityFlag?: string }) {
     const { page, limit, skip } = parsePageLimit(query.page, query.limit, 200);
 
     const search = (query.search || "").trim();
     const status = (query.status || "").trim();
     const role = (query.role || "").trim();
     const provider = (query.provider || "").trim();
+    const capacityFlagParam = query.capacityFlag === "true" ? true : query.capacityFlag === "false" ? false : undefined;
 
     const allowedSortBy = new Set(["createdAt", "updatedAt", "name", "email"]);
     const sortBy = allowedSortBy.has(String(query.sortBy)) ? String(query.sortBy) : "createdAt";
@@ -192,7 +207,11 @@ export const AdminService = {
     const where: any = {};
 
     if (search) {
-      where.OR = [{ email: { contains: search } }, { name: { contains: search } }];
+      where.OR = [
+        { email: { contains: search } },
+        { name: { contains: search } },
+        { permanentId: { contains: search } },
+      ];
     }
     if (status && ["active", "inactive", "blocked"].includes(status)) {
       where.status = status;
@@ -213,6 +232,7 @@ export const AdminService = {
         orderBy: { [sortBy]: sortOrder } as any,
         select: {
           id: true,
+          permanentId: true,
           name: true,
           email: true,
           role: true,
@@ -222,6 +242,7 @@ export const AdminService = {
           image: true,
           phone: true,
           location: true,
+          monthlyTokenLimit: true,
           createdAt: true,
           updatedAt: true,
           subscription: {
@@ -237,11 +258,48 @@ export const AdminService = {
       }),
     ]);
 
+    const currentMonthYear = new Date().toISOString().slice(0, 7); // e.g. "2026-07"
+    const userIds = users.map((u) => u.id);
+
+    const monthlyUsages = await prisma.userMonthlyUsage.findMany({
+      where: {
+        userId: { in: userIds },
+        monthYear: currentMonthYear,
+      },
+    });
+
+    const usageMap = new Map<string, number>();
+    monthlyUsages.forEach((mu) => {
+      usageMap.set(mu.userId, mu.tokensUsed);
+    });
+
+    const enrichedUsers = await Promise.all(
+      users.map(async (u) => {
+        const permanentId = await ensurePermanentUserId(u.id, u.permanentId);
+        const tokensUsed = usageMap.get(u.id) || 0;
+        const limit = u.monthlyTokenLimit || 50000;
+        const usagePercentage = Number(((tokensUsed / limit) * 100).toFixed(2));
+        const capacityFlag = usagePercentage >= 90;
+
+        return {
+          ...u,
+          permanentId,
+          tokensUsed,
+          usagePercentage,
+          capacityFlag,
+        };
+      })
+    );
+
+    const finalUsers = capacityFlagParam !== undefined
+      ? enrichedUsers.filter((u) => u.capacityFlag === capacityFlagParam)
+      : enrichedUsers;
+
     const totalPage = Math.ceil(total / limit);
 
     return {
-      meta: { page, limit, total, totalPage },
-      data: users,
+      meta: { page, limit, total: capacityFlagParam !== undefined ? finalUsers.length : total, totalPage },
+      data: finalUsers,
     };
   },
 
@@ -360,6 +418,13 @@ export const AdminService = {
     ]);
 
     await prisma.$transaction(async (tx) => {
+      if (user.permanentId) {
+        await tx.deletedUserId.upsert({
+          where: { permanentId: user.permanentId },
+          create: { permanentId: user.permanentId },
+          update: {},
+        });
+      }
       await tx.savedAffirmation.deleteMany({ where: { userId } });
       await tx.notification.deleteMany({ where: { userId } });
       await tx.reminder.deleteMany({ where: { userId } });
@@ -693,5 +758,244 @@ export const AdminService = {
       },
       asOf: now.toISOString(),
     };
+  },
+
+  async getUserActivityMetrics(monthYear?: string) {
+    const targetMonthYear = monthYear || new Date().toISOString().slice(0, 7);
+
+    const [yearStr, monthStr] = targetMonthYear.split("-");
+    const year = Number(yearStr);
+    const month = Number(monthStr) - 1;
+
+    const startDate = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0));
+
+    const aiSessionsCount = await prisma.eventLog.count({
+      where: {
+        eventName: "ai_chat_session_start",
+        timestamp: { gte: startDate, lt: endDate },
+      },
+    });
+
+    const journalEntriesCount = await prisma.journal.count({
+      where: {
+        createdAt: { gte: startDate, lt: endDate },
+      },
+    });
+
+    const aiJournalRatio = journalEntriesCount === 0
+      ? "-"
+      : Number((aiSessionsCount / journalEntriesCount).toFixed(2));
+
+    const aiMessagesCount = await prisma.eventLog.count({
+      where: {
+        eventName: "ai_message_sent",
+        timestamp: { gte: startDate, lt: endDate },
+      },
+    });
+
+    const conversationDepth = aiSessionsCount === 0
+      ? 0
+      : Number((aiMessagesCount / aiSessionsCount).toFixed(2));
+
+    const [eventLogsInRange, journalsInRange] = await Promise.all([
+      prisma.eventLog.findMany({
+        where: {
+          eventName: { in: ["ai_chat_session_start", "journal_entry_saved"] },
+          timestamp: { gte: startDate, lt: endDate },
+        },
+        select: { timestamp: true, localTimestamp: true, utcOffset: true },
+      }),
+      prisma.journal.findMany({
+        where: {
+          createdAt: { gte: startDate, lt: endDate },
+        },
+        select: { createdAt: true },
+      }),
+    ]);
+
+    let morningCount = 0;
+    let middayCount = 0;
+    let nightCount = 0;
+
+    const categorizeHour = (hour: number) => {
+      if (hour >= TIME_OF_DAY_BUCKETS.MORNING.startHour && hour <= TIME_OF_DAY_BUCKETS.MORNING.endHour) {
+        morningCount++;
+      } else if (hour >= TIME_OF_DAY_BUCKETS.MIDDAY.startHour && hour <= TIME_OF_DAY_BUCKETS.MIDDAY.endHour) {
+        middayCount++;
+      } else {
+        nightCount++;
+      }
+    };
+
+    eventLogsInRange.forEach((log) => {
+      const hour = getHourInTimezone(log.timestamp, TARGET_TIMEZONE);
+      categorizeHour(hour);
+    });
+
+    journalsInRange.forEach((j) => {
+      const hour = getHourInTimezone(j.createdAt, TARGET_TIMEZONE);
+      categorizeHour(hour);
+    });
+
+    const totalEvents = morningCount + middayCount + nightCount;
+    const timeOfDayDistribution = {
+      timezone: TARGET_TIMEZONE,
+      morningPercentage: totalEvents === 0 ? 0 : Number(((morningCount / totalEvents) * 100).toFixed(2)),
+      middayPercentage: totalEvents === 0 ? 0 : Number(((middayCount / totalEvents) * 100).toFixed(2)),
+      nightPercentage: totalEvents === 0 ? 0 : Number(((nightCount / totalEvents) * 100).toFixed(2)),
+      bucketCounts: {
+        morning: morningCount,
+        midday: middayCount,
+        night: nightCount,
+        total: totalEvents,
+      },
+      bucketsConfig: TIME_OF_DAY_BUCKETS,
+    };
+
+    const journalCountsPerUserRaw = await prisma.journal.groupBy({
+      by: ["userId"],
+      where: {
+        createdAt: { gte: startDate, lt: endDate },
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    const userIdsWithJournals = journalCountsPerUserRaw.map((item) => item.userId);
+    const usersInfo = await prisma.user.findMany({
+      where: { id: { in: userIdsWithJournals } },
+      select: { id: true, permanentId: true, name: true, email: true },
+    });
+
+    const userInfoMap = new Map(usersInfo.map((u) => [u.id, u]));
+
+    const journalCountByMonthPerUser = journalCountsPerUserRaw.map((item) => {
+      const userInfo = userInfoMap.get(item.userId);
+      return {
+        userId: item.userId,
+        permanentId: userInfo?.permanentId || null,
+        userName: userInfo?.name || "Unknown",
+        userEmail: userInfo?.email || "Unknown",
+        journalCount: item._count.id,
+        monthYear: targetMonthYear,
+      };
+    });
+
+    return {
+      monthYear: targetMonthYear,
+      aiJournalRatio,
+      conversationDepth,
+      timeOfDayDistribution,
+      journalCountByMonthPerUser,
+    };
+  },
+
+  async getEventLogs(query: {
+    page?: string;
+    limit?: string;
+    startDate?: string;
+    endDate?: string;
+    eventName?: string;
+    userId?: string;
+    search?: string;
+  }) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (query.eventName) {
+      where.eventName = query.eventName;
+    }
+
+    if (query.userId) {
+      where.OR = [
+        { userId: query.userId },
+        { permanentUserId: query.userId },
+      ];
+    }
+
+    if (query.search) {
+      where.OR = [
+        { eventName: { contains: query.search } },
+        { permanentUserId: { contains: query.search } },
+        { sessionId: { contains: query.search } },
+      ];
+    }
+
+    if (query.startDate || query.endDate) {
+      where.timestamp = {};
+      if (query.startDate) {
+        where.timestamp.gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        where.timestamp.lte = new Date(query.endDate);
+      }
+    }
+
+    const [total, eventLogs] = await Promise.all([
+      prisma.eventLog.count({ where }),
+      prisma.eventLog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { timestamp: "desc" },
+      }),
+    ]);
+
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+        totalPage: Math.ceil(total / limit),
+      },
+      data: eventLogs,
+    };
+  },
+
+  async exportEventLogsCSV(query: { startDate?: string; endDate?: string; eventName?: string }) {
+    const where: any = {};
+
+    if (query.eventName) {
+      where.eventName = query.eventName;
+    }
+
+    if (query.startDate || query.endDate) {
+      where.timestamp = {};
+      if (query.startDate) {
+        where.timestamp.gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        where.timestamp.lte = new Date(query.endDate);
+      }
+    }
+
+    const eventLogs = await prisma.eventLog.findMany({
+      where,
+      orderBy: { timestamp: "asc" },
+    });
+
+    const csvRows = [
+      ["Session ID", "Permanent User ID", "Event Name", "Timestamp (UTC)", "Local Timestamp", "UTC Offset", "Message Char Length"].join(","),
+    ];
+
+    eventLogs.forEach((log) => {
+      const row = [
+        `"${log.sessionId}"`,
+        `"${log.permanentUserId}"`,
+        `"${log.eventName}"`,
+        `"${log.timestamp.toISOString()}"`,
+        `"${log.localTimestamp || ""}"`,
+        `"${log.utcOffset || ""}"`,
+        log.charLength !== null && log.charLength !== undefined ? log.charLength : "",
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    return csvRows.join("\n");
   },
 };

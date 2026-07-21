@@ -134,8 +134,8 @@ const changePassword = async (
   await changePasswordSuccessTemplate({
     userName: user.name,
     email: user.email,
-    changedAt: new Date().toLocaleString("en-BD", {
-      timeZone: "Asia/Dhaka",
+    changedAt: new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York",
       year: "numeric",
       month: "long",
       day: "2-digit",
@@ -240,8 +240,8 @@ const deleteAccount = async (
   // 5. Send confirmation email
   try {
     const device = getDeviceInfo(clientInfo?.userAgent);
-    const deletedAt = new Date().toLocaleString("en-BD", {
-      timeZone: "Asia/Dhaka",
+    const deletedAt = new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York",
       year: "numeric",
       month: "long",
       day: "2-digit",

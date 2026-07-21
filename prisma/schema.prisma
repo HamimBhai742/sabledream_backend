@@ -28,6 +28,7 @@ model User {
   analyticsEnabled           Boolean      @default(true)
   crashReportsEnabled        Boolean      @default(true)
   fcmToken                   String?
+  permanentId                String?      @unique
   monthlyTokenLimit          Int          @default(50000)
   hasSent90Warning           Boolean      @default(false)
   hasSent100Warning          Boolean      @default(false)
@@ -47,6 +48,7 @@ model User {
   notifications     Notification[]
   subscription      Subscription?
   transactions      Transaction[]
+  eventLogs         EventLog[]
 }
 
 
@@ -211,7 +213,7 @@ model Reminder {
   daysOfMonth    Int[]    // e.g. [1, 15, 30]
   daysOfWeek     String[] // e.g. ["MON", "WED", "FRI"]
   time           String   @default("08:00") // e.g. "08:00"
-  timeZone       String   @default("Asia/Dhaka") // e.g. "Asia/Dhaka", "America/New_York"
+  timeZone       String   @default("America/New_York") // e.g. "America/New_York"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -343,5 +345,33 @@ model AuditLog {
 
   @@index([createdAt])
 }
+
+model EventLog {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @db.ObjectId
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permanentUserId String
+  eventName       String   // mood_check_in, journal_entry_saved, entry_sealed, ai_chat_session_start, ai_message_sent, breathing_moment_completed, breathing_moment_skipped, daily_read_opened, affirmation_viewed, book_rec_viewed, manifestation_board_opened, app_open
+  timestamp       DateTime
+  localTimestamp  String?  // Raw ISO 8601 string from device e.g. "2026-07-09T07:02:14-04:00"
+  utcOffset       String?  // e.g. "-04:00"
+  sessionId       String
+  charLength      Int?     // Character count for AI message events (number only, NO message text)
+
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([permanentUserId])
+  @@index([eventName])
+  @@index([sessionId])
+  @@index([timestamp])
+}
+
+model DeletedUserId {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  permanentId String   @unique
+  deletedAt   DateTime @default(now())
+}
+
 
 

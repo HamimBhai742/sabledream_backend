@@ -13,6 +13,7 @@ import { ChatRoutes } from "../modules/chat/chat.routes";
 import { AdminRoutes } from "../modules/admin/admin.routes";
 import { BooksRoutes } from "../modules/books/books.routes";
 import { DailyReflectionRoutes } from "../modules/daily-reflection/daily-reflection.routes";
+import { EventLogRoutes } from "../modules/event-log/event-log.routes";
 
 
 
@@ -74,6 +75,10 @@ const routes = [
   {
     path: "/daily-reflections",
     route: DailyReflectionRoutes,
+  },
+  {
+    path: "/event-logs",
+    route: EventLogRoutes,
   },
 ];
 
