@@ -332,6 +332,9 @@ export const startNotificationScheduler = () => {
       } catch (error) {
         console.error("[SCHEDULER] Error running monthly token limit reset:", error);
       }
+    },
+    {
+      timezone: "America/New_York",
     }
   );
   console.log("[SCHEDULER] Monthly token limit reset scheduler started successfully.");

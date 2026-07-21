@@ -9,9 +9,7 @@ const singleEventSchema = z.object({
 });
 
 const createEventLogSchema = z.object({
-  body: z.object({
-    events: z.array(singleEventSchema).min(1, "At least one event is required"),
-  }),
+  events: z.array(singleEventSchema).min(1, "At least one event is required"),
 });
 
 export const EventLogValidation = {

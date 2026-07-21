@@ -295,10 +295,11 @@ export const AdminService = {
       ? enrichedUsers.filter((u) => u.capacityFlag === capacityFlagParam)
       : enrichedUsers;
 
-    const totalPage = Math.ceil(total / limit);
+    const filteredTotal = capacityFlagParam !== undefined ? finalUsers.length : total;
+    const totalPage = Math.ceil(filteredTotal / limit);
 
     return {
-      meta: { page, limit, total: capacityFlagParam !== undefined ? finalUsers.length : total, totalPage },
+      meta: { page, limit, total: filteredTotal, totalPage },
       data: finalUsers,
     };
   },
@@ -308,6 +309,7 @@ export const AdminService = {
       where: { id: userId },
       select: {
         id: true,
+        permanentId: true,
         name: true,
         email: true,
         role: true,
@@ -318,6 +320,7 @@ export const AdminService = {
         image: true,
         phone: true,
         location: true,
+        monthlyTokenLimit: true,
         personalizationEnabled: true,
         analyticsEnabled: true,
         crashReportsEnabled: true,
