@@ -3,12 +3,12 @@ import sendEmail from "../sendEmail";
 interface ForgotPasswordData {
   userName: string;
   email: string;
-  resetUrl: string;
+  otp: string;
   requestedAt: string;
 }
 
 export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
-  const { userName, email, resetUrl, requestedAt } = data;
+  const { userName, email, otp, requestedAt } = data;
 
   const subject = "🌸 Reset Your Password";
 
@@ -18,7 +18,7 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Forgot Password</title>
+  <title>Reset Password OTP</title>
 </head>
 
 <body style="
@@ -72,7 +72,7 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
                 font-size: 30px;
                 margin-bottom: 20px;
                 box-shadow: 0 4px 20px rgba(233,30,99,0.2);
-              ">🔒</div>
+              ">🔑</div>
 
               <h1 style="
                 margin: 0 0 8px;
@@ -82,7 +82,7 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
                 font-style: italic;
                 font-family: Georgia, 'Times New Roman', serif;
                 letter-spacing: 0.3px;
-              ">Forgot Your Password?</h1>
+              ">Reset Your Password</h1>
 
               <p style="
                 margin: 0;
@@ -91,7 +91,7 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
                 letter-spacing: 2px;
                 text-transform: uppercase;
                 font-weight: 500;
-              ">It's on its way ✦</p>
+              ">Your one-time verification code ✦</p>
             </td>
           </tr>
 
@@ -110,9 +110,9 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
 
               <p style="margin: 0 0 34px; font-size: 14px; color: #8c5c6b; line-height: 1.85;">
                 No worries — it happens to the best of us. We received a request to reset
-                your password. Click the button below and we'll have you back on your
-                journey in no time.<br/><br/>
-                This link is valid for <strong style="color: #c2185b;">30 minutes</strong>,
+                your password. Please use the following One-Time Password (OTP) to reset
+                your password in the app:<br/><br/>
+                This OTP is valid for <strong style="color: #c2185b;">15 minutes</strong>,
                 so be sure to use it soon.
               </p>
 
@@ -128,28 +128,27 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
                   padding: 6px 16px;
                   border-radius: 50px;
                   letter-spacing: 0.3px;
-                ">⏱ Expires in 30 minutes</span>
+                ">⏱ Expires in 15 minutes</span>
               </p>
 
-              <!-- ===== CTA BUTTON ===== -->
-              <p style="text-align: center; margin: 0 0 20px;">
-                <a
-                  href="${resetUrl}"
-                  style="
-                    display: inline-block;
-                    padding: 16px 52px;
-                    background: linear-gradient(135deg, #e91e63, #f06292);
-                    color: #ffffff;
-                    font-size: 14px;
-                    font-weight: 600;
-                    letter-spacing: 1.5px;
-                    text-transform: uppercase;
-                    text-decoration: none;
-                    border-radius: 50px;
-                    box-shadow: 0 6px 24px rgba(233,30,99,0.35), 0 2px 8px rgba(233,30,99,0.2);
-                  "
-                >Reset My Password</a>
-              </p>
+              <!-- ===== OTP CODE DISPLAY ===== -->
+              <div style="text-align: center; margin: 0 0 30px;">
+                <div style="
+                  display: inline-block;
+                  font-family: 'Courier New', Courier, monospace;
+                  font-size: 38px;
+                  font-weight: bold;
+                  letter-spacing: 6px;
+                  color: #c2185b;
+                  background-color: #fce4ec;
+                  padding: 18px 36px;
+                  border-radius: 16px;
+                  border: 2px dashed rgba(233,30,99,0.3);
+                  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+                ">
+                  ${otp}
+                </div>
+              </div>
 
               <!-- ===== DIVIDER ===== -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0;">
@@ -157,41 +156,6 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
                   <td style="border-top: 1px solid rgba(233,30,99,0.15);"></td>
                   <td style="padding: 0 14px; font-size: 16px; color: #f48fb1; white-space: nowrap;">🌷</td>
                   <td style="border-top: 1px solid rgba(233,30,99,0.15);"></td>
-                </tr>
-              </table>
-
-              <!-- ===== FALLBACK URL ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                background: #fff9fb;
-                border: 1px dashed rgba(233,30,99,0.25);
-                border-radius: 14px;
-                margin-bottom: 24px;
-              ">
-                <tr>
-                  <td style="padding: 18px 20px;">
-                    <p style="
-                      margin: 0 0 4px;
-                      font-size: 11px;
-                      font-weight: 600;
-                      color: #c2185b;
-                      letter-spacing: 1.5px;
-                      text-transform: uppercase;
-                    ">🔗 Button not working?</p>
-                    <p style="margin: 0 0 10px; font-size: 12.5px; color: #b07080; line-height: 1.6;">
-                      Copy and paste this link directly into your browser:
-                    </p>
-                    <span style="
-                      display: block;
-                      font-size: 11px;
-                      color: #e91e63;
-                      word-break: break-all;
-                      font-family: 'Courier New', Courier, monospace;
-                      background: #fce4ec;
-                      padding: 10px 12px;
-                      border-radius: 8px;
-                      border: 1px solid rgba(233,30,99,0.12);
-                    ">${resetUrl}</span>
-                  </td>
                 </tr>
               </table>
 
@@ -217,7 +181,7 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
                         <td style="padding-left: 10px; font-size: 12.5px; color: #997755; line-height: 1.65;">
                           <strong style="color: #7a5500;">Didn't ask for this?</strong>
                           You can safely ignore this email. Your password will stay the same
-                          and this link will expire on its own.
+                          and this code will expire on its own.
                         </td>
                       </tr>
                     </table>

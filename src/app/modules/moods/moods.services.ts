@@ -1,9 +1,29 @@
 import { prisma } from '../../lib/prisma';
 
+function getNewYorkDateString(dateInput: Date | string | number): string {
+  const date = new Date(dateInput);
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(date);
+  const partMap: Record<string, string> = {};
+  parts.forEach(p => { partMap[p.type] = p.value; });
+  return `${partMap.year}-${partMap.month}-${partMap.day}`;
+}
+
+function getNewYorkDayOfWeek(dateInput: Date | string | number): number {
+  const date = new Date(dateInput);
+  const dayStr = date.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short" });
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return days.indexOf(dayStr);
+}
+
 const createOrUpdateMood = async (userId: string, data: { energy: string; activities: string[]; date: string }) => {
-  const moodDate = new Date(data.date);
-  // Normalize date to start of day to ensure one entry per day
-  moodDate.setHours(0, 0, 0, 0);
+  const nyDateStr = getNewYorkDateString(data.date);
+  const moodDate = new Date(`${nyDateStr}T00:00:00.000Z`);
 
   return await prisma.mood.upsert({
     where: {
@@ -26,8 +46,8 @@ const createOrUpdateMood = async (userId: string, data: { energy: string; activi
 };
 
 const getMoodByDate = async (userId: string, date: string) => {
-  const moodDate = new Date(date);
-  moodDate.setHours(0, 0, 0, 0);
+  const nyDateStr = getNewYorkDateString(date);
+  const moodDate = new Date(`${nyDateStr}T00:00:00.000Z`);
 
   return await prisma.mood.findUnique({
     where: {
@@ -40,12 +60,15 @@ const getMoodByDate = async (userId: string, date: string) => {
 };
 
 const getMoodsByDateRange = async (userId: string, startDate: string, endDate: string) => {
+  const startNy = getNewYorkDateString(startDate);
+  const endNy = getNewYorkDateString(endDate);
+
   return await prisma.mood.findMany({
     where: {
       userId,
       date: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: new Date(`${startNy}T00:00:00.000Z`),
+        lte: new Date(`${endNy}T23:59:59.999Z`),
       },
     },
     orderBy: {
@@ -55,8 +78,12 @@ const getMoodsByDateRange = async (userId: string, startDate: string, endDate: s
 };
 
 const getMoodsByMonth = async (userId: string, year: number, month: number) => {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+  const startMonthStr = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endMonthStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  const startDate = new Date(`${startMonthStr}T00:00:00.000Z`);
+  const endDate = new Date(`${endMonthStr}T23:59:59.999Z`);
 
   return await prisma.mood.findMany({
     where: {
@@ -73,18 +100,19 @@ const getMoodsByMonth = async (userId: string, year: number, month: number) => {
 };
 
 const getMoodHistory = async (userId: string) => {
-  // 1. Current Week Data (Monday to Sunday) for the chart
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0 (Sun) to 6 (Sat)
-  // Calculate Monday of the current week
-  const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
+  const todayNYStr = getNewYorkDateString(today);
+  const todayNYUtc = new Date(`${todayNYStr}T00:00:00.000Z`);
   
-  const startOfWeek = new Date(new Date().setDate(diff));
-  startOfWeek.setHours(0, 0, 0, 0);
+  const dayOfWeek = getNewYorkDayOfWeek(today); // 0 (Sun) to 6 (Sat)
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+  const startOfWeek = new Date(todayNYUtc);
+  startOfWeek.setUTCDate(todayNYUtc.getUTCDate() - daysToSubtract);
 
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+  endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+  endOfWeek.setUTCHours(23, 59, 59, 999);
 
   const weeklyMoods = await prisma.mood.findMany({
     where: {
@@ -113,7 +141,7 @@ const getMoodHistory = async (userId: string) => {
   const getFeelingType = (energy: string) => {
     const lowerEnergy = energy.toLowerCase();
     const lowMoods = ['sad', 'angry', 'overwhelmed', 'anxious'];
-    const calmMoods = ['calm', 'sat', 'clam']; // images showed 'clam' or 'sat'
+    const calmMoods = ['calm', 'sat', 'clam'];
 
     if (lowMoods.includes(lowerEnergy)) return 'Low';
     if (calmMoods.includes(lowerEnergy)) return 'Clam';
@@ -123,7 +151,7 @@ const getMoodHistory = async (userId: string) => {
   const mapMoodWithType = (mood: any) => ({
     ...mood,
     feelingType: getFeelingType(mood.energy),
-    day: new Date(mood.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    day: new Date(mood.date).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short' }),
   });
 
   return {

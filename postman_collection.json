@@ -1,0 +1,1811 @@
+{
+  "info": {
+    "name": "SableDream Backend API Collection",
+    "description": "Complete Postman collection for SableDream Backend API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health & System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Root Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "resend-otp"]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"GOOGLE_ID_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/google-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "google-login"]
+            }
+          }
+        },
+        {
+          "name": "Apple Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"APPLE_ID_TOKEN\",\n  \"fullName\": {\n    \"givenName\": \"John\",\n    \"familyName\": \"Doe\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/apple-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "apple-login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Access Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh-token"]
+            }
+          }
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "John Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/update-profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "update-profile"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"OldPassword123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Download My Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/download-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "download-data"]
+            }
+          }
+        },
+        {
+          "name": "Delete Profile Image",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/delete-profile-image",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "delete-profile-image"]
+            }
+          }
+        },
+        {
+          "name": "Update Privacy Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isPrivate\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/privacy-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "privacy-settings"]
+            }
+          }
+        },
+        {
+          "name": "Update FCM Token",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcmToken\": \"SAMPLE_FCM_DEVICE_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/update-fcm-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "update-fcm-token"]
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/delete-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "delete-account"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Journals",
+      "item": [
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Daily Reflections\",\n  \"color\": \"#4F46E5\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/journals/category",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", "category"]
+            }
+          }
+        },
+        {
+          "name": "Get My Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/category",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", "category"]
+            }
+          }
+        },
+        {
+          "name": "Get My Journals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/my-journals",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", "my-journals"]
+            }
+          }
+        },
+        {
+          "name": "Get All Journals (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/all-journals",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", "all-journals"]
+            }
+          }
+        },
+        {
+          "name": "Create Journal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "My First Entry",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Today I started working on my goals...",
+                  "type": "text"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "CATEGORY_ID_HERE",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/journals/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Journal By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/:journalId",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", ":journalId"],
+              "variable": [
+                {
+                  "key": "journalId",
+                  "value": "JOURNAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Journal",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Entry Title",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Updated journal content text...",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/journals/:journalId",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", ":journalId"],
+              "variable": [
+                {
+                  "key": "journalId",
+                  "value": "JOURNAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Journal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/journals/:journalId",
+              "host": ["{{baseUrl}}"],
+              "path": ["journals", ":journalId"],
+              "variable": [
+                {
+                  "key": "journalId",
+                  "value": "JOURNAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Moods",
+      "item": [
+        {
+          "name": "Create or Update Mood",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mood\": \"HAPPY\",\n  \"date\": \"2026-07-21\",\n  \"note\": \"Felt energised and productive today!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/moods/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["moods", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Mood By Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/moods/my-mood?date=2026-07-21",
+              "host": ["{{baseUrl}}"],
+              "path": ["moods", "my-mood"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-07-21"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Calendar Moods Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/moods/calendar?startDate=2026-07-01&endDate=2026-07-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["moods", "calendar"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-07-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-07-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Mood History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/moods/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["moods", "history"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Manifestations",
+      "item": [
+        {
+          "name": "Create Manifestation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "My Dream Career Goal",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Manifesting growth and success in software development.",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/manifestations/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["manifestations", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get My Manifestations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/manifestations/",
+              "host": ["{{baseUrl}}"],
+              "path": ["manifestations", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Manifestation By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/manifestations/:manifestationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["manifestations", ":manifestationId"],
+              "variable": [
+                {
+                  "key": "manifestationId",
+                  "value": "MANIFESTATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Manifestation",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Manifestation Title",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Updated manifestation details",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/manifestations/:manifestationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["manifestations", ":manifestationId"],
+              "variable": [
+                {
+                  "key": "manifestationId",
+                  "value": "MANIFESTATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Manifestation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/manifestations/:manifestationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["manifestations", ":manifestationId"],
+              "variable": [
+                {
+                  "key": "manifestationId",
+                  "value": "MANIFESTATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Affirmations",
+      "item": [
+        {
+          "name": "Get Today Affirmation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", "today"]
+            }
+          }
+        },
+        {
+          "name": "Get All Affirmations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Saved Affirmations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/saved",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", "saved"]
+            }
+          }
+        },
+        {
+          "name": "Save Affirmation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/:id/save",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", ":id", "save"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "AFFIRMATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unsave Affirmation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/:id/unsave",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", ":id", "unsave"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "AFFIRMATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Affirmation By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "AFFIRMATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Affirmation (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"I am capable of achieving everything I set my mind to.\",\n  \"category\": \"Self-love\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/admin/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", "admin", "create"]
+            }
+          }
+        },
+        {
+          "name": "Update Affirmation (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Updated positive affirmation text.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/admin/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", "admin", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "AFFIRMATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Affirmation (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affirmations/admin/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["affirmations", "admin", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "AFFIRMATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reminders",
+      "item": [
+        {
+          "name": "Get Reminder Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reminders/",
+              "host": ["{{baseUrl}}"],
+              "path": ["reminders", ""]
+            }
+          }
+        },
+        {
+          "name": "Test Notification Endpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Reminder\",\n  \"body\": \"This is a test notification payload\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reminders/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["reminders", "test"]
+            }
+          }
+        },
+        {
+          "name": "Update Reminder Settings By Type",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"time\": \"09:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reminders/:type",
+              "host": ["{{baseUrl}}"],
+              "path": ["reminders", ":type"],
+              "variable": [
+                {
+                  "key": "type",
+                  "value": "journal",
+                  "description": "journal | mood | affirmation"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", ""]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
+            }
+          }
+        },
+        {
+          "name": "Mark Specific Notification As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/:id/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", ":id", "read"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "NOTIFICATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "NOTIFICATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Get Subscription Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Billing History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/billing-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "billing-history"]
+            }
+          }
+        },
+        {
+          "name": "Sync Subscription (RevenueCat)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "sync"]
+            }
+          }
+        },
+        {
+          "name": "RevenueCat Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": {\n    \"type\": \"INITIAL_PURCHASE\",\n    \"app_user_id\": \"USER_ID_HERE\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/webhook",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "webhook"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Books",
+      "item": [
+        {
+          "name": "Get All Books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Book By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "BOOK_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Data",
+      "item": [
+        {
+          "name": "Get All Public Collections Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Hello, how can I improve my sleep and reflection today?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/message",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "message"]
+            }
+          }
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/history/:user_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "history", ":user_id"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Chat History",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/history/:user_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "history", ":user_id"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Chat Memory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/memory/:user_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "memory", ":user_id"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Users Usage (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "usage"]
+            }
+          }
+        },
+        {
+          "name": "Export Usage CSV (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "export"]
+            }
+          }
+        },
+        {
+          "name": "Get Specific User Usage (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/usage/:user_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "usage", ":user_id"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Bulk Token Limit (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 10000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/usage/bulk-limit",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "usage", "bulk-limit"]
+            }
+          }
+        },
+        {
+          "name": "Update User Token Limit (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/usage/:userId/limit",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "usage", ":userId", "limit"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Global Token Cap (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/global-cap",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "global-cap"]
+            }
+          }
+        },
+        {
+          "name": "Update Global Token Cap (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cap\": 500000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/global-cap",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "global-cap"]
+            }
+          }
+        },
+        {
+          "name": "Get Audit Logs (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/audit-logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "audit-logs"]
+            }
+          }
+        },
+        {
+          "name": "Get User Usage History (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/usage/:userId/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "usage", ":userId", "history"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Admin Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "overview"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"BLOCKED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:userId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", ":userId", "status"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:userId/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", ":userId", "role"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Journals (Admin Content)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/content/journals",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "content", "journals"]
+            }
+          }
+        },
+        {
+          "name": "Delete Journal (Admin Content)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/content/journals/:journalId",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "content", "journals", ":journalId"],
+              "variable": [
+                {
+                  "key": "journalId",
+                  "value": "JOURNAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Manifestations (Admin Content)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/content/manifestations",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "content", "manifestations"]
+            }
+          }
+        },
+        {
+          "name": "Delete Manifestation (Admin Content)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/content/manifestations/:manifestationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "content", "manifestations", ":manifestationId"],
+              "variable": [
+                {
+                  "key": "manifestationId",
+                  "value": "MANIFESTATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Mood Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/content/moods/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "content", "moods", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/subscriptions/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "subscriptions", "active"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/subscriptions/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "subscriptions", "transactions"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/subscriptions/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "subscriptions", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Get User Activity Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/metrics/user-activity",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "metrics", "user-activity"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Logs Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/metrics/event-logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "metrics", "event-logs"]
+            }
+          }
+        },
+        {
+          "name": "Export Event Logs CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/metrics/event-logs/export-csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "metrics", "event-logs", "export-csv"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Reflections",
+      "item": [
+        {
+          "name": "Upload Reflections CSV (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/daily-reflections/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["daily-reflections", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get All Daily Reflections (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/daily-reflections/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["daily-reflections", "admin"]
+            }
+          }
+        },
+        {
+          "name": "Update Daily Reflection (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"What made you smile today?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/daily-reflections/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["daily-reflections", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "REFLECTION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Daily Reflection (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/daily-reflections/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["daily-reflections", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "REFLECTION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Today Public Daily Reflection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/daily-reflections/public",
+              "host": ["{{baseUrl}}"],
+              "path": ["daily-reflections", "public"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Event Logs",
+      "item": [
+        {
+          "name": "Create Event Logs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventType\": \"APP_OPEN\",\n      \"timestamp\": \"2026-07-21T17:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-logs/",
+              "host": ["{{baseUrl}}"],
+              "path": ["event-logs", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

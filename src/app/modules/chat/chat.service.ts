@@ -128,7 +128,7 @@ export const ChatService = {
     if (userUsed >= individualLimit) {
       throw new AppError(
         httpStatus.FORBIDDEN,
-        "You have reached your monthly AI token limit."
+        "You’ve reached your monthly Sable capacity. Your commitment to becoming is beautiful. New messages will open at the start of your next month."
       );
     }
 
@@ -380,8 +380,8 @@ export const ChatService = {
       if (user.fcmToken) {
         await sendPushNotification(
           user.fcmToken,
-          "AI Chat Limit Reached",
-          "You have reached 100% of your monthly AI token limit.",
+          "Sable Capacity Reached",
+          "You’ve reached your monthly Sable capacity. Your commitment to becoming is beautiful. New messages will open at the start of your next month.",
           {
             screen: "chat",
             type: "usage_warning_100",

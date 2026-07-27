@@ -70,13 +70,49 @@ const forgotPassword = catchAsyncFn(async (req: Request, res: Response) => {
   });
 });
 
-const resetPassword = catchAsyncFn(async (req: Request, res: Response) => {
-  const { email, token, newPassword } = req.body;
+const resendOtp = catchAsyncFn(async (req: Request, res: Response) => {
+  const { email } = req.body;
 
-  if (!email || !token || !newPassword) {
+  if (!email) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Email is required");
+  }
+
+  const result = await AuthService.forgotPassword(email);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "OTP resent successfully",
+    data: result,
+  });
+});
+
+const verifyOtp = catchAsyncFn(async (req: Request, res: Response) => {
+  const { email, token, otp } = req.body;
+  const code = token || otp;
+
+  if (!email || !code) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Email and verification code (token or otp) are required");
+  }
+
+  const result = await AuthService.verifyOtp(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "OTP verified successfully",
+    data: result,
+  });
+});
+
+const resetPassword = catchAsyncFn(async (req: Request, res: Response) => {
+  const { email, token, otp, newPassword } = req.body;
+  const code = token || otp;
+
+  if (!email || !code || !newPassword) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Email, token, and new password are required",
+      "Email, verification code (token or otp), and new password are required",
     );
   }
 
@@ -203,6 +239,8 @@ export const AuthController = {
   registerUser,
   loginUser,
   forgotPassword,
+  resendOtp,
+  verifyOtp,
   resetPassword,
   googleLoginController,
   appleLoginController,

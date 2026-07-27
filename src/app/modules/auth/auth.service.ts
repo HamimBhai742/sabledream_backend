@@ -140,35 +140,31 @@ const forgotPassword = async (email: string) => {
     );
   }
 
-  // Generate a random 64-character hex string as a token
-  const resetToken = crypto.randomBytes(32).toString("hex");
+  // Generate a secure 6-digit numeric OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-  // Hash the token for storing in the database for security
-  const hashedToken = crypto
+  // Hash the OTP for storing in the database for security
+  const hashedOtp = crypto
     .createHash("sha256")
-    .update(resetToken)
+    .update(otp)
     .digest("hex");
 
-  // Token expires in 1 hour
-  const tokenExpires = new Date(Date.now() + 60 * 60 * 1000);
+  // Token expires in 15 minutes
+  const tokenExpires = new Date(Date.now() + 15 * 60 * 1000);
 
   await prisma.user.update({
     where: { email },
     data: {
-      forgetPasswordToken: hashedToken,
+      forgetPasswordToken: hashedOtp,
       forgetPasswordTokenExpires: tokenExpires,
     },
   });
-
-  // Construct the reset URL
-  const baseUrl = process.env.CLIENT_URL || "http://localhost:3000";
-  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&email=${email}`;
 
   try {
     const data = {
       userName: user.name,
       email,
-      resetUrl,
+      otp,
       requestedAt: new Date().toLocaleString("en-US", {
         timeZone: "America/New_York",
         year: "numeric",
@@ -196,13 +192,21 @@ const forgotPassword = async (email: string) => {
     );
   }
 
-  return { message: "Password reset link sent to your email" };
+  return { message: "Password reset OTP sent to your email" };
 };
 
 const resetPassword = async (payload: any) => {
-  const { email, token, newPassword } = payload;
+  const { email, token, otp, newPassword } = payload;
+  const code = token || otp;
 
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  if (!code) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Verification code (token or otp) is required",
+    );
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(code).digest("hex");
 
   const user = await prisma.user.findFirst({
     where: {
@@ -217,7 +221,7 @@ const resetPassword = async (payload: any) => {
   if (!user) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Token is invalid or has expired",
+      "Verification code is invalid or has expired",
     );
   }
 
@@ -247,6 +251,39 @@ const resetPassword = async (payload: any) => {
   };
   await resetPasswordSuccessTemplate(data);
   return { message: "Password reset successfully" };
+};
+
+const verifyOtp = async (payload: any) => {
+  const { email, token, otp } = payload;
+  const code = token || otp;
+
+  if (!code) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Verification code (token or otp) is required",
+    );
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(code).digest("hex");
+
+  const user = await prisma.user.findFirst({
+    where: {
+      email,
+      forgetPasswordToken: hashedToken,
+      forgetPasswordTokenExpires: {
+        gt: new Date(),
+      },
+    },
+  });
+
+  if (!user) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Verification code is invalid or has expired",
+    );
+  }
+
+  return { message: "OTP verified successfully" };
 };
 
 const googleLoginService = async (idToken: string) => {
@@ -429,6 +466,7 @@ export const AuthService = {
   registerUser,
   loginUser,
   forgotPassword,
+  verifyOtp,
   resetPassword,
   googleLoginService,
   appleLoginService,

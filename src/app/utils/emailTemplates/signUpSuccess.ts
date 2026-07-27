@@ -11,436 +11,648 @@ export const welcomeSableDreamTemplate = async (
 ) => {
   const { userName, email, joinedAt } = data;
 
-  const subject = "🌸 Welcome to Sable Dream — You're In!";
+  const subject = "🌸 Welcome to Sable Dreams — You're In!";
 
   const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Welcome to Sable Dream</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Welcome to Sable Dreams</title>
+<style>
+  /* Reset */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background-color: #f5e8ef; font-family: Georgia, 'Times New Roman', serif; -webkit-font-smoothing: antialiased; }
+
+  /* Outer wrapper */
+  .email-outer {
+    background-color: #f5e8ef;
+    padding: 32px 16px 48px;
+  }
+
+  /* Main container */
+  .email-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 32px rgba(186,113,152,0.13);
+  }
+
+  /* ── HERO HEADER ── */
+  .hero {
+    position: relative;
+    background: linear-gradient(160deg, #f2c4d8 0%, #e8a0c0 40%, #d4749e 100%);
+    padding: 48px 32px 0;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* Watermark text behind hero content */
+  .hero-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 8px;
+    gap: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .hero-watermark span {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    color: rgba(255,255,255,0.22);
+    letter-spacing: 1px;
+    line-height: 2;
+    white-space: nowrap;
+    display: block;
+    transform: rotate(-8deg);
+    transform-origin: center;
+    width: 140%;
+    margin-left: -20%;
+  }
+
+  .hero-content { position: relative; z-index: 2; }
+
+  /* Wax seal SVG */
+  .wax-seal {
+    display: inline-block;
+    margin-bottom: 18px;
+  }
+
+  /* Hero title — script style */
+  .hero-title {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 38px;
+    font-weight: 400;
+    color: #6b1a3a;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+
+  .hero-subtitle {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 15px;
+    color: #8a2f54;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .hero-tagline {
+    display: inline-block;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #7a2748;
+    margin-bottom: 24px;
+  }
+
+  /* Hero banner strip */
+  .hero-banner {
+    background: linear-gradient(90deg, #c05880, #d4749e);
+    padding: 14px 24px;
+    margin: 0 -32px;
+    margin-top: 0;
+  }
+  .hero-banner p {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  /* ── BODY SECTION ── */
+  .body-section {
+    padding: 40px 40px 0;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle watermark in body */
+  .body-watermark {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .body-watermark span {
+    display: block;
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 11px;
+    color: rgba(221,148,193,0.12);
+    letter-spacing: 1px;
+    line-height: 2.2;
+    white-space: nowrap;
+    transform: rotate(-8deg);
+    transform-origin: center;
+    width: 140%;
+    margin-left: -20%;
+  }
+
+  .body-content { position: relative; z-index: 1; }
+
+  .greeting {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1018;
+    margin-bottom: 16px;
+  }
+
+  .body-text {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #3d2030;
+    margin-bottom: 14px;
+  }
+
+  .body-text strong { color: #c05880; font-weight: 700; }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e8c0d4, transparent);
+    margin: 28px 0;
+  }
+
+  /* ── ACCOUNT DETAILS CARD ── */
+  .account-card {
+    background: #fef8fb;
+    border: 1.5px solid #f0d0e4;
+    border-radius: 14px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .account-card-title {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #c05880;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .account-card-title::before { content: '✦  '; }
+  .account-card-title::after  { content: '  ✦'; }
+
+  .account-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .account-table tr {
+    border-bottom: 1px solid #f0d0e4;
+  }
+  .account-table tr:last-child { border-bottom: none; }
+  .account-table td {
+    padding: 11px 12px;
+    font-size: 13.5px;
+    vertical-align: middle;
+  }
+  .account-table td:first-child {
+    font-family: Arial, sans-serif;
+    color: #9a6070;
+    font-size: 12px;
+    width: 38%;
+  }
+  .account-table td:last-child {
+    font-family: Georgia, serif;
+    color: #1a1018;
+    font-weight: 400;
+    text-align: right;
+  }
+  .status-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2a7a4a;
+  }
+
+  /* ── NEXT STEPS CARD ── */
+  .steps-card {
+    background: #fef8fb;
+    border: 1.5px solid #f0d0e4;
+    border-radius: 14px;
+    padding: 24px;
+    margin: 0 0 24px;
+  }
+  .steps-card-title {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #c05880;
+    margin-bottom: 18px;
+  }
+  .steps-card-title::before { content: '🚀  '; }
+
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .step-row:last-child { margin-bottom: 0; }
+  .step-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e8a0c0, #c05880);
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-text {
+    font-family: Georgia, serif;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #3d2030;
+  }
+  .step-text strong { color: #1a1018; }
+
+  /* ── CTA SECTION ── */
+  .cta-section {
+    background: linear-gradient(135deg, #fde8f2, #f8d0e8);
+    border: 1.5px solid #f0c0d8;
+    border-radius: 16px;
+    padding: 32px 28px;
+    text-align: center;
+    margin: 0 0 24px;
+  }
+  .cta-title {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 22px;
+    color: #6b1a3a;
+    margin-bottom: 10px;
+  }
+  .cta-sub {
+    font-family: Georgia, serif;
+    font-size: 14px;
+    color: #8a4060;
+    line-height: 1.6;
+    margin-bottom: 22px;
+  }
+  .cta-button {
+    display: inline-block;
+    background: linear-gradient(135deg, #c05880, #e8a0c0);
+    color: #ffffff;
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 16px;
+    padding: 14px 40px;
+    border-radius: 100px;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── SUPPORT SECTION ── */
+  .support-section {
+    background: #fff;
+    border: 1.5px solid #f0d0e4;
+    border-left: 4px solid #c05880;
+    border-radius: 0 12px 12px 0;
+    padding: 20px 22px;
+    margin: 0 0 32px;
+  }
+  .support-title {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #c05880;
+    margin-bottom: 10px;
+  }
+  .support-title::before { content: '💗  '; }
+  .support-text {
+    font-family: Georgia, serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #3d2030;
+  }
+  .support-text a { color: #c05880; font-weight: 700; text-decoration: none; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #fef0f6;
+    border-top: 1px solid #f0d0e4;
+    padding: 28px 40px 32px;
+    text-align: center;
+  }
+
+  /* Three hearts */
+  .footer-hearts {
+    font-size: 16px;
+    color: #e0b0c8;
+    letter-spacing: 8px;
+    margin-bottom: 18px;
+  }
+
+  /* Footer wax seal */
+  .footer-seal { margin-bottom: 14px; }
+
+  .footer-brand {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 22px;
+    color: #c05880;
+    margin-bottom: 4px;
+  }
+
+  .footer-tagline {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    color: #b090a0;
+    margin-bottom: 18px;
+  }
+
+  .footer-body {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: #b090a0;
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+  .footer-body a { color: #c05880; text-decoration: none; }
+
+  .footer-links {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: #c08090;
+    margin-bottom: 14px;
+  }
+  .footer-links a {
+    color: #c05880;
+    text-decoration: none;
+    margin: 0 6px;
+  }
+
+  .footer-copy {
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    color: #c0a0b0;
+  }
+
+  /* ── PADDING SECTION WRAPPER ── */
+  .padded { padding: 0 40px; }
+
+</style>
 </head>
+<body>
+<div class="email-outer">
+<div class="email-container">
 
-<body style="
-  margin: 0;
-  padding: 0;
-  background-color: #fdf0f4;
-  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-">
+  <!-- ════════════════════════════════════════ -->
+  <!-- HERO HEADER                              -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="hero">
 
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fdf0f4; padding: 40px 16px;">
-    <tr>
-      <td align="center">
+    <!-- Watermark rows -->
+    <div class="hero-watermark" aria-hidden="true">
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+    </div>
 
-        <!-- Card -->
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="
-          max-width: 600px;
-          width: 100%;
-          background: #ffffff;
-          border-radius: 28px;
-          overflow: hidden;
-          box-shadow: 0 20px 60px rgba(210,80,120,0.12), 0 4px 16px rgba(0,0,0,0.04);
-          border: 1px solid rgba(255,182,207,0.4);
-        ">
+    <div class="hero-content">
 
-          <!-- ===== HEADER ===== -->
+      <!-- Wax Seal SVG -->
+      <div class="wax-seal">
+        <svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <!-- Wax blob shape -->
+          <ellipse cx="48" cy="50" rx="44" ry="42" fill="#c08090" opacity="0.35"/>
+          <!-- Main wax seal circle -->
+          <circle cx="48" cy="47" r="40" fill="#C084A0"/>
+          <!-- Inner border ring -->
+          <circle cx="48" cy="47" r="35" fill="none" stroke="#d4a060" stroke-width="1.5" opacity="0.9"/>
+          <!-- Second inner ring -->
+          <circle cx="48" cy="47" r="31" fill="none" stroke="#d4a060" stroke-width="0.8" opacity="0.7"/>
+          <!-- Crown -->
+          <g transform="translate(30, 20)" fill="#d4a060">
+            <rect x="3" y="14" width="30" height="5" rx="1"/>
+            <polygon points="3,14 6,6 12,12 18,4 24,12 30,6 33,14"/>
+            <circle cx="18" cy="3" r="2"/>
+          </g>
+          <!-- Laurel left -->
+          <g transform="translate(12, 38)" fill="none" stroke="#d4a060" stroke-width="1.2" opacity="0.85">
+            <path d="M0 18 Q4 12 2 6"/>
+            <path d="M2 15 Q8 10 6 4"/>
+            <path d="M4 20 Q0 14 4 8"/>
+            <path d="M1 23 Q6 18 4 12"/>
+            <path d="M3 8 Q6 4 10 6"/>
+            <path d="M5 13 Q8 9 12 11"/>
+            <path d="M4 18 Q8 14 12 16"/>
+            <path d="M5 23 Q9 19 13 21"/>
+          </g>
+          <!-- Laurel right -->
+          <g transform="translate(72, 38) scale(-1,1)" fill="none" stroke="#d4a060" stroke-width="1.2" opacity="0.85">
+            <path d="M0 18 Q4 12 2 6"/>
+            <path d="M2 15 Q8 10 6 4"/>
+            <path d="M4 20 Q0 14 4 8"/>
+            <path d="M1 23 Q6 18 4 12"/>
+            <path d="M3 8 Q6 4 10 6"/>
+            <path d="M5 13 Q8 9 12 11"/>
+            <path d="M4 18 Q8 14 12 16"/>
+            <path d="M5 23 Q9 19 13 21"/>
+          </g>
+          <!-- SD letters -->
+          <text x="48" y="60" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#d4a060" text-anchor="middle" letter-spacing="1">SD</text>
+          <!-- Small flowers bottom -->
+          <g fill="#d4a060" opacity="0.8">
+            <circle cx="36" cy="70" r="2"/>
+            <circle cx="48" cy="73" r="2"/>
+            <circle cx="60" cy="70" r="2"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <div class="hero-title">Welcome to Sable Dreams</div>
+      <div class="hero-subtitle">Where your inner world finds its rhythm. 🌷</div>
+      <div class="hero-tagline">You're officially part of the family ✦</div>
+    </div>
+
+    <!-- Banner strip -->
+    <div class="hero-banner">
+      <p>🎉 &nbsp; Account Successfully Created — You're All Set!</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- BODY                                     -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="body-section">
+
+    <!-- Subtle watermark -->
+    <div class="body-watermark" aria-hidden="true">
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+    </div>
+
+    <div class="body-content">
+
+      <!-- Greeting -->
+      <div class="greeting">Hello, ${userName}! 💕</div>
+
+      <p class="body-text">
+        We're so happy you're here. Your <strong>Sable Dreams</strong> account is live and ready to explore — a space created for reflection, affirmation, and becoming.
+      </p>
+      <p class="body-text">
+        Every detail was designed with intention, and now it's yours to experience.
+      </p>
+      <p class="body-text">
+        Take a breath, open your dashboard, and begin your moment of centering. 🌸
+      </p>
+
+      <div class="divider"></div>
+
+      <!-- Account Details -->
+      <div class="account-card">
+        <div class="account-card-title">Your Account</div>
+        <table class="account-table">
           <tr>
-            <td style="
-              background: linear-gradient(160deg, #fce4ec 0%, #f8bbd0 40%, #f48fb1 100%);
-              padding: 52px 48px 44px;
-              text-align: center;
-            ">
-              <!-- Logo -->
-              <img
-                src="https://imglink.cc/cdn/vnw0bUtBsF.png"
-                height="44"
-                alt="Sable Dream"
-                style="display: block; margin: 0 auto 24px;"
-              />
-
-              <!-- Welcome icon circle -->
-              <div style="
-                display: inline-block;
-                background: rgba(255,255,255,0.6);
-                border: 2px solid rgba(255,255,255,0.9);
-                border-radius: 50%;
-                width: 80px;
-                height: 80px;
-                line-height: 80px;
-                text-align: center;
-                font-size: 36px;
-                margin-bottom: 22px;
-                box-shadow: 0 4px 24px rgba(233,30,99,0.2);
-              ">🌸</div>
-
-              <h1 style="
-                margin: 0 0 10px;
-                color: #880e4f;
-                font-size: 32px;
-                font-weight: 400;
-                font-style: italic;
-                font-family: Georgia, 'Times New Roman', serif;
-                letter-spacing: 0.4px;
-              ">Welcome to Sable Dream</h1>
-
-              <p style="
-                margin: 0 0 18px;
-                color: rgba(136,14,79,0.65);
-                font-size: 14px;
-                line-height: 1.7;
-                font-family: Georgia, 'Times New Roman', serif;
-                font-style: italic;
-              ">Where every dream begins with a single step 🌷</p>
-
-              <p style="
-                margin: 0;
-                color: rgba(136,14,79,0.5);
-                font-size: 11px;
-                letter-spacing: 2.5px;
-                text-transform: uppercase;
-                font-weight: 600;
-              ">You're officially part of the family ✦</p>
-            </td>
+            <td>Account Status</td>
+            <td><span class="status-active">✅ Active</span></td>
           </tr>
-
-          <!-- ===== PINK ACCENT STRIP ===== -->
           <tr>
-            <td style="
-              background: linear-gradient(90deg, #f48fb1 0%, #e91e63 50%, #f48fb1 100%);
-              padding: 12px 48px;
-              text-align: center;
-            ">
-              <p style="
-                margin: 0;
-                font-size: 12px;
-                color: #fff0f6;
-                letter-spacing: 2px;
-                text-transform: uppercase;
-                font-weight: 700;
-              ">🎉 Account successfully created — you're all set!</p>
-            </td>
+            <td>Email</td>
+            <td><a href="mailto:${email}" style="color:#c05880;text-decoration:none;">${email}</a></td>
           </tr>
-
-          <!-- ===== BODY ===== -->
           <tr>
-            <td style="padding: 44px 48px 36px; background: #ffffff;">
-
-              <!-- Greeting -->
-              <p style="
-                margin: 0 0 14px;
-                font-size: 22px;
-                color: #3d0020;
-                font-family: Georgia, 'Times New Roman', serif;
-                font-weight: 400;
-              ">Hello, ${userName}! 💕</p>
-
-              <p style="margin: 0 0 32px; font-size: 14px; color: #8c5c6b; line-height: 1.9;">
-                We are absolutely thrilled to have you join <strong style="color: #c2185b;">Sable Dream</strong>.
-                Your account is now live and ready to explore. We've built something
-                truly special here, and we can't wait for you to discover everything
-                we have in store for you. This is just the beginning of something beautiful. 🌸
-              </p>
-
-              <!-- ===== ACCOUNT DETAILS BOX ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                background: linear-gradient(135deg, #fdf0f4 0%, #fce4ec 100%);
-                border: 1px solid rgba(233,30,99,0.2);
-                border-radius: 14px;
-                margin-bottom: 10px;
-              ">
-                <tr>
-                  <td style="padding: 28px 24px; text-align: center;">
-
-                    <p style="
-                      margin: 0 0 16px;
-                      font-size: 12px;
-                      color: #c2185b;
-                      text-transform: uppercase;
-                      letter-spacing: 1.5px;
-                      font-weight: 700;
-                    ">✦ Your Account</p>
-
-                    <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto; width: 100%; max-width: 340px;">
-
-                      <!-- Row: Status -->
-                      <tr>
-                        <td style="
-                          padding: 10px 16px;
-                          background: #ffffff;
-                          border-radius: 10px 10px 0 0;
-                          border: 1px solid rgba(233,30,99,0.12);
-                          border-bottom: none;
-                          font-size: 13px;
-                          color: #8c5c6b;
-                        ">Account Status</td>
-                        <td style="
-                          padding: 10px 16px;
-                          background: #ffffff;
-                          border-radius: 10px 10px 0 0;
-                          border: 1px solid rgba(233,30,99,0.12);
-                          border-bottom: none;
-                          font-size: 13px;
-                          font-weight: 600;
-                          color: #2e7d32;
-                          text-align: right;
-                        ">✅ Active</td>
-                      </tr>
-
-                      <!-- Row: Email -->
-                      <tr>
-                        <td style="
-                          padding: 10px 16px;
-                          background: #fff9fb;
-                          border: 1px solid rgba(233,30,99,0.12);
-                          border-bottom: none;
-                          font-size: 13px;
-                          color: #8c5c6b;
-                        ">Email</td>
-                        <td style="
-                          padding: 10px 16px;
-                          background: #fff9fb;
-                          border: 1px solid rgba(233,30,99,0.12);
-                          border-bottom: none;
-                          font-size: 13px;
-                          font-weight: 500;
-                          color: #3d0020;
-                          text-align: right;
-                        ">${email}</td>
-                      </tr>
-
-                      <!-- Row: Member Since -->
-                      <tr>
-                        <td style="
-                          padding: 10px 16px;
-                          background: #ffffff;
-                          border-radius: 0 0 0 10px;
-                          border: 1px solid rgba(233,30,99,0.12);
-                          font-size: 13px;
-                          color: #8c5c6b;
-                        ">Member Since</td>
-                        <td style="
-                          padding: 10px 16px;
-                          background: #ffffff;
-                          border-radius: 0 0 10px 0;
-                          border: 1px solid rgba(233,30,99,0.12);
-                          font-size: 13px;
-                          font-weight: 500;
-                          color: #3d0020;
-                          text-align: right;
-                        ">${joinedAt}</td>
-                      </tr>
-
-                    </table>
-
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Email note -->
-              <p style="
-                margin: 0 0 32px;
-                font-size: 12px;
-                color: #c4a0b0;
-                text-align: center;
-              ">Registered with: <strong style="color: #c2185b;">${email}</strong></p>
-
-              <!-- ===== DIVIDER ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 28px;">
-                <tr>
-                  <td style="border-top: 1px solid rgba(233,30,99,0.15);"></td>
-                  <td style="padding: 0 14px; font-size: 16px; color: #f48fb1; white-space: nowrap;">🌷</td>
-                  <td style="border-top: 1px solid rgba(233,30,99,0.15);"></td>
-                </tr>
-              </table>
-
-              <!-- ===== GET STARTED STEPS ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                background: #f8f9fc;
-                border: 1px solid rgba(233,30,99,0.1);
-                border-radius: 14px;
-                margin-bottom: 24px;
-              ">
-                <tr>
-                  <td style="padding: 20px 22px;">
-                    <p style="
-                      margin: 0 0 16px;
-                      font-size: 12px;
-                      color: #c2185b;
-                      text-transform: uppercase;
-                      letter-spacing: 1px;
-                      font-weight: 700;
-                    ">🚀 Get Started in 3 Steps</p>
-
-                    <!-- Step 1 -->
-                    <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; margin-bottom: 14px;">
-                      <tr>
-                        <td style="width: 32px; vertical-align: top; padding-top: 2px;">
-                          <div style="
-                            width: 24px;
-                            height: 24px;
-                            background: linear-gradient(135deg, #f48fb1, #e91e63);
-                            border-radius: 50%;
-                            text-align: center;
-                            line-height: 24px;
-                            font-size: 11px;
-                            font-weight: 700;
-                            color: #ffffff;
-                          ">1</div>
-                        </td>
-                        <td style="padding-left: 10px; font-size: 13.5px; color: #8c5c6b; line-height: 1.6;">
-                          <strong style="color: #3d0020;">Complete your profile</strong> — add a photo and fill in your personal details to get started.
-                        </td>
-                      </tr>
-                    </table>
-
-                    <!-- Step 2 -->
-                    <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; margin-bottom: 14px;">
-                      <tr>
-                        <td style="width: 32px; vertical-align: top; padding-top: 2px;">
-                          <div style="
-                            width: 24px;
-                            height: 24px;
-                            background: linear-gradient(135deg, #f48fb1, #e91e63);
-                            border-radius: 50%;
-                            text-align: center;
-                            line-height: 24px;
-                            font-size: 11px;
-                            font-weight: 700;
-                            color: #ffffff;
-                          ">2</div>
-                        </td>
-                        <td style="padding-left: 10px; font-size: 13.5px; color: #8c5c6b; line-height: 1.6;">
-                          <strong style="color: #3d0020;">Explore Sable Dream</strong> — browse everything we have to offer and find what inspires you.
-                        </td>
-                      </tr>
-                    </table>
-
-                    <!-- Step 3 -->
-                    <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
-                      <tr>
-                        <td style="width: 32px; vertical-align: top; padding-top: 2px;">
-                          <div style="
-                            width: 24px;
-                            height: 24px;
-                            background: linear-gradient(135deg, #f48fb1, #e91e63);
-                            border-radius: 50%;
-                            text-align: center;
-                            line-height: 24px;
-                            font-size: 11px;
-                            font-weight: 700;
-                            color: #ffffff;
-                          ">3</div>
-                        </td>
-                        <td style="padding-left: 10px; font-size: 13.5px; color: #8c5c6b; line-height: 1.6;">
-                          <strong style="color: #3d0020;">Enable notifications</strong> — stay in the loop with the latest updates, offers, and news just for you.
-                        </td>
-                      </tr>
-                    </table>
-
-                  </td>
-                </tr>
-              </table>
-
-              <!-- ===== GO TO DASHBOARD CTA ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                background: linear-gradient(135deg, #fdf0f4 0%, #fce4ec 100%);
-                border: 1px solid rgba(233,30,99,0.18);
-                border-radius: 14px;
-                margin-bottom: 24px;
-              ">
-                <tr>
-                  <td style="padding: 28px 24px; text-align: center;">
-                    <p style="margin: 0 0 6px; font-size: 16px; color: #3d0020; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-style: italic;">
-                      Your journey starts now 🌸
-                    </p>
-                    <p style="margin: 0 0 20px; font-size: 13.5px; color: #8c5c6b; line-height: 1.7;">
-                      Head over to your dashboard to begin your Sable Dream experience.<br/>
-                      Everything is ready and waiting just for you. 💕
-                    </p>
-                    <a href="#" style="
-                      display: inline-block;
-                      background: linear-gradient(135deg, #f48fb1 0%, #e91e63 100%);
-                      color: #ffffff;
-                      text-decoration: none;
-                      font-size: 14px;
-                      font-weight: 700;
-                      padding: 14px 36px;
-                      border-radius: 50px;
-                      letter-spacing: 0.5px;
-                      box-shadow: 0 6px 18px rgba(233,30,99,0.35);
-                    ">Go to My Dashboard 🌷</a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- ===== NEED HELP ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                background: #fff5f7;
-                border: 1px solid rgba(233,30,99,0.15);
-                border-left: 4px solid #f48fb1;
-                border-radius: 10px;
-              ">
-                <tr>
-                  <td style="padding: 16px 18px;">
-                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 700; color: #880e4f; text-transform: uppercase; letter-spacing: 0.8px;">💌 Need Help Getting Started?</p>
-                    <p style="margin: 0; font-size: 13.5px; color: #8c5c6b; line-height: 1.6;">
-                      Our support team is here for you every step of the way.
-                      Don't hesitate to <a href="#" style="color: #e91e63; font-weight: 600; text-decoration: none;">reach out to us</a> anytime —
-                      we'd love to help you make the most of Sable Dream. 🌸
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-            </td>
+            <td>Member Since</td>
+            <td>${joinedAt}</td>
           </tr>
-
-          <!-- ===== FOOTER ===== -->
-          <tr>
-            <td style="
-              background: #fdf0f4;
-              border-top: 1px solid rgba(233,30,99,0.08);
-              padding: 26px 48px;
-              text-align: center;
-            ">
-              <p style="margin: 0 0 8px; font-size: 11px; color: #f4a7be; letter-spacing: 6px;">♡ ♡ ♡</p>
-
-              <img
-                src="https://imglink.cc/cdn/vnw0bUtBsF.png"
-                height="24"
-                alt="Sable Dream"
-                style="display: block; margin: 0 auto 14px; opacity: 0.5;"
-              />
-
-              <p style="margin: 0 0 10px; font-size: 12px; color: #c48098; line-height: 1.7;">
-                You're receiving this because you created an account at Sable Dream.<br/>
-                Questions? <a href="#" style="color: #e91e63; text-decoration: none;">Contact our support team</a>
-                — we're always here for you.
-              </p>
-
-              <p style="margin: 0 0 12px; font-size: 12px; color: #c48098;">
-                <a href="#" style="color: #e91e63; text-decoration: none;">Privacy Policy</a>
-                &nbsp;·&nbsp;
-                <a href="#" style="color: #e91e63; text-decoration: none;">Terms of Service</a>
-                &nbsp;·&nbsp;
-                <a href="#" style="color: #e91e63; text-decoration: none;">Unsubscribe</a>
-              </p>
-
-              <p style="margin: 0; font-size: 11px; color: #dda8b8; line-height: 1.6;">
-                This welcome email was sent to <strong>${email}</strong> upon successful account registration.<br/>
-                © ${new Date().getFullYear()} Sable Dream. Made with 🌸 for you.
-              </p>
-            </td>
-          </tr>
-
         </table>
+      </div>
 
-      </td>
-    </tr>
-  </table>
+      <div class="divider"></div>
 
+      <!-- Next Steps -->
+      <div class="steps-card">
+        <div class="steps-card-title">Get Started in 3 Steps</div>
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Complete your profile</strong> — add a photo and make it yours.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Explore Sable Dreams</strong> — discover reflections, affirmations, and rituals that speak to you.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>Enable notifications</strong> — gentle reminders to pause, breathe, and return to yourself.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- CTA SECTION                              -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="padded" style="padding-top:0; padding-bottom:0; background:#fff; position:relative; z-index:1;">
+    <div class="cta-section">
+      <div class="cta-title">Your journey starts now 🌸</div>
+      <div class="cta-sub">Everything is ready and waiting for you. 💕</div>
+      <a href="#" class="cta-button">Go to My Dashboard ✨</a>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- SUPPORT SECTION                          -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="padded" style="background:#fff; padding-top:0; padding-bottom:32px; position:relative; z-index:1;">
+    <div class="support-section">
+      <div class="support-title">Need a Little Help Getting Started?</div>
+      <p class="support-text">
+        Our team is here for you every step of the way. Don't hesitate to
+        <a href="#">reach out to us</a> anytime — we'd love to help you make the most of your Sable Dreams experience. 🌸
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- FOOTER                                   -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="footer">
+
+    <div class="footer-hearts">♡ &nbsp; ♡ &nbsp; ♡</div>
+
+    <!-- Footer wax seal (smaller) -->
+    <div class="footer-seal">
+      <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="26" cy="26" r="24" fill="#C084A0"/>
+        <circle cx="26" cy="26" r="20" fill="none" stroke="#d4a060" stroke-width="1.2" opacity="0.85"/>
+        <text x="26" y="31" font-family="Georgia, serif" font-size="13" font-weight="700" fill="#d4a060" text-anchor="middle">SD</text>
+      </svg>
+    </div>
+
+    <div class="footer-brand">Sable Dreams</div>
+    <div class="footer-tagline">Dream. Believe. Become.</div>
+
+    <p class="footer-body">
+      You're receiving this because you created an account at Sable Dreams.<br>
+      Questions? <a href="#">Contact our support team</a> — we're always here for you.
+    </p>
+
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a> &nbsp;·&nbsp;
+      <a href="#">Terms of Service</a> &nbsp;·&nbsp;
+      <a href="#">Unsubscribe</a>
+    </div>
+
+    <div class="footer-copy">© ${new Date().getFullYear()} Sable Dreams. Made with 🌸 for you.</div>
+  </div>
+
+</div>
+</div>
 </body>
 </html>
   `;
