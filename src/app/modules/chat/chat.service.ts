@@ -4,6 +4,7 @@ import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import { AknChatMessageResponse } from "./chat.types";
 import { sendPushNotification } from "../../utils/sendNotification";
+import { ensurePermanentUserId } from "../../utils/generatePermanentUserId";
 
 const withTrailingSlash = (value: string) => (value.endsWith("/") ? value : `${value}/`);
 
@@ -620,6 +621,7 @@ export const ChatService = {
           email: true,
           image: true,
           monthlyTokenLimit: true,
+          permanentId: true,
         },
         orderBy: {
           [sortBy]: sortOrder,
@@ -629,12 +631,14 @@ export const ChatService = {
       });
 
       const usagePromises = users.map(async (user) => {
+        const permanentId = await ensurePermanentUserId(user.id, user.permanentId);
+        const userWithPermanentId = { ...user, permanentId };
         try {
           const usage = await this.getUsage(user.id, targetMonth);
-          return { user, usage };
+          return { user: userWithPermanentId, usage };
         } catch (err) {
           return {
-            user,
+            user: userWithPermanentId,
             usage: {
               user_id: user.id,
               total_tokens: 0,
@@ -664,16 +668,19 @@ export const ChatService = {
           email: true,
           image: true,
           monthlyTokenLimit: true,
+          permanentId: true,
         },
       });
 
       const usagePromises = users.map(async (user) => {
+        const permanentId = await ensurePermanentUserId(user.id, user.permanentId);
+        const userWithPermanentId = { ...user, permanentId };
         try {
           const usage = await this.getUsage(user.id, targetMonth);
-          return { user, usage };
+          return { user: userWithPermanentId, usage };
         } catch (err) {
           return {
-            user,
+            user: userWithPermanentId,
             usage: {
               user_id: user.id,
               total_tokens: 0,
