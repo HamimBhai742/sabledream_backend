@@ -1001,4 +1001,56 @@ export const AdminService = {
 
     return csvRows.join("\n");
   },
+
+  async exportUserActivityMetricsCSV(monthYear?: string) {
+    const metrics = await this.getUserActivityMetrics(monthYear);
+    const targetMonth = metrics.monthYear;
+
+    const csvRows: string[] = [];
+
+    // Summary Metrics Section
+    csvRows.push("--- SUMMARY METRICS ---");
+    csvRows.push("Month/Year,AI Journal Ratio,Conversation Depth,Total Logs");
+    csvRows.push(
+      `"${targetMonth}","${metrics.aiJournalRatio}","${metrics.conversationDepth}","${metrics.timeOfDayDistribution.bucketCounts.total}"`
+    );
+    csvRows.push("");
+
+    // Time of Day Distribution Section
+    csvRows.push(`--- TIME OF DAY DISTRIBUTION (Timezone: ${metrics.timeOfDayDistribution.timezone}) ---`);
+    csvRows.push("Time Bucket,Count,Percentage");
+
+    const morningLabel = metrics.timeOfDayDistribution.bucketsConfig.MORNING.label;
+    const middayLabel = metrics.timeOfDayDistribution.bucketsConfig.MIDDAY.label;
+    const nightLabel = metrics.timeOfDayDistribution.bucketsConfig.NIGHT.label;
+
+    csvRows.push(
+      `"${morningLabel}","${metrics.timeOfDayDistribution.bucketCounts.morning}","${metrics.timeOfDayDistribution.morningPercentage}%"`
+    );
+    csvRows.push(
+      `"${middayLabel}","${metrics.timeOfDayDistribution.bucketCounts.midday}","${metrics.timeOfDayDistribution.middayPercentage}%"`
+    );
+    csvRows.push(
+      `"${nightLabel}","${metrics.timeOfDayDistribution.bucketCounts.night}","${metrics.timeOfDayDistribution.nightPercentage}%"`
+    );
+    csvRows.push("");
+
+    // User Journal Activity Section
+    csvRows.push("--- USER JOURNAL ACTIVITY ---");
+    csvRows.push("User ID,Permanent ID,User Name,User Email,Journal Count");
+
+    metrics.journalCountByMonthPerUser.forEach((userActivity) => {
+      const escapedUserId = String(userActivity.userId || "").replace(/"/g, '""');
+      const escapedPermanentId = String(userActivity.permanentId || "").replace(/"/g, '""');
+      const escapedName = String(userActivity.userName || "").replace(/"/g, '""');
+      const escapedEmail = String(userActivity.userEmail || "").replace(/"/g, '""');
+      const journalCount = userActivity.journalCount;
+
+      csvRows.push(
+        `"${escapedUserId}","${escapedPermanentId}","${escapedName}","${escapedEmail}","${journalCount}"`
+      );
+    });
+
+    return csvRows.join("\n");
+  },
 };

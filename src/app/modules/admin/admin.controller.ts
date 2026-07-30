@@ -257,4 +257,15 @@ export const AdminController = {
     res.setHeader("Content-Disposition", 'attachment; filename="event_logs.csv"');
     res.status(httpStatus.OK).send(csvData);
   }),
+
+  exportUserActivityMetricsCSV: catchAsyncFn(async (req: Request, res: Response) => {
+    const monthYear = req.query.monthYear as string | undefined;
+    const csvData = await AdminService.exportUserActivityMetricsCSV(monthYear);
+
+    const filename = `user_activity_metrics_${monthYear || new Date().toISOString().slice(0, 7)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.status(httpStatus.OK).send(csvData);
+  }),
 };
