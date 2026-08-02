@@ -1,6 +1,9 @@
 import { prisma } from '../../lib/prisma';
 
 function getNewYorkDateString(dateInput: Date | string | number): string {
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    return dateInput;
+  }
   const date = new Date(dateInput);
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
@@ -15,6 +18,11 @@ function getNewYorkDateString(dateInput: Date | string | number): string {
 }
 
 function getNewYorkDayOfWeek(dateInput: Date | string | number): number {
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    const [year, month, day] = dateInput.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 12, 0, 0);
+    return date.getDay();
+  }
   const date = new Date(dateInput);
   const dayStr = date.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short" });
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
