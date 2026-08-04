@@ -1391,6 +1391,39 @@
           }
         },
         {
+          "name": "Get Default Monthly Token Limit (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/default-limit",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "default-limit"]
+            }
+          }
+        },
+        {
+          "name": "Update Default Monthly Token Limit (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"defaultTokenLimit\": 40000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/default-limit",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "default-limit"]
+            }
+          }
+        },
+        {
           "name": "Get Audit Logs (Admin)",
           "request": {
             "method": "GET",

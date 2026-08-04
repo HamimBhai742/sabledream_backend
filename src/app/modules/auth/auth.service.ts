@@ -42,6 +42,12 @@ const registerUser = async (payload: any) => {
   // Generate permanent user ID
   const permanentId = await generatePermanentUserId();
 
+  // Fetch default monthly token limit
+  const configRecord = await prisma.appConfig.findUnique({
+    where: { key: "default_monthly_token_limit" },
+  });
+  const defaultLimit = configRecord ? Number(configRecord.value) : 50000;
+
   // Create the user
   const newUser = await prisma.user.create({
     data: {
@@ -50,6 +56,7 @@ const registerUser = async (payload: any) => {
       password: hashedPassword,
       permanentId,
       isVerified: true, // Auto-verified based on user request (no OTP needed)
+      monthlyTokenLimit: defaultLimit,
     },
   });
 
@@ -313,6 +320,11 @@ const googleLoginService = async (idToken: string) => {
 
   if (!user) {
     const permanentId = await generatePermanentUserId();
+    const configRecord = await prisma.appConfig.findUnique({
+      where: { key: "default_monthly_token_limit" },
+    });
+    const defaultLimit = configRecord ? Number(configRecord.value) : 50000;
+
     user = await prisma.user.create({
       data: {
         email,
@@ -322,6 +334,7 @@ const googleLoginService = async (idToken: string) => {
         providerId: sub,
         permanentId,
         isVerified: true,
+        monthlyTokenLimit: defaultLimit,
       },
     });
   } else {
@@ -368,6 +381,11 @@ const appleLoginService = async (idToken: string, fullName?: string) => {
 
   if (!user) {
     const permanentId = await generatePermanentUserId();
+    const configRecord = await prisma.appConfig.findUnique({
+      where: { key: "default_monthly_token_limit" },
+    });
+    const defaultLimit = configRecord ? Number(configRecord.value) : 50000;
+
     user = await prisma.user.create({
       data: {
         email,
@@ -376,6 +394,7 @@ const appleLoginService = async (idToken: string, fullName?: string) => {
         providerId,
         permanentId,
         isVerified: true,
+        monthlyTokenLimit: defaultLimit,
       },
     });
   } else {

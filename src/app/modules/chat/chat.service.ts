@@ -486,6 +486,45 @@ export const ChatService = {
     };
   },
 
+  async getDefaultTokenLimit() {
+    const configRecord = await prisma.appConfig.findUnique({
+      where: { key: "default_monthly_token_limit" },
+    });
+
+    return {
+      defaultTokenLimit: configRecord ? Number(configRecord.value) : 50000,
+    };
+  },
+
+  async updateDefaultTokenLimit(adminId: string, adminEmail: string, newLimit: number) {
+    const oldConfig = await prisma.appConfig.findUnique({
+      where: { key: "default_monthly_token_limit" },
+    });
+
+    const oldValue = oldConfig ? oldConfig.value : "50000";
+
+    const configRecord = await prisma.appConfig.upsert({
+      where: { key: "default_monthly_token_limit" },
+      update: { value: String(newLimit) },
+      create: { key: "default_monthly_token_limit", value: String(newLimit) },
+    });
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        action: "UPDATE_DEFAULT_LIMIT",
+        adminId,
+        adminEmail,
+        oldValue,
+        newValue: String(newLimit),
+      },
+    });
+
+    return {
+      defaultTokenLimit: Number(configRecord.value),
+    };
+  },
+
   async updateAllUsersTokenLimit(
     adminId: string,
     adminEmail: string,

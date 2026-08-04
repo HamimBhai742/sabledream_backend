@@ -189,6 +189,36 @@ const updateGlobalTokenCap = catchAsyncFn(async (req: Request, res: Response) =>
   });
 });
 
+const getDefaultTokenLimit = catchAsyncFn(async (req: Request, res: Response) => {
+  const result = await ChatService.getDefaultTokenLimit();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Default monthly token limit retrieved successfully",
+    data: result,
+  });
+});
+
+const updateDefaultTokenLimit = catchAsyncFn(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
+  const adminEmail = req.user?.email || "admin@sabledream.com";
+  const { defaultTokenLimit } = req.body;
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  const result = await ChatService.updateDefaultTokenLimit(adminId, adminEmail, defaultTokenLimit);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Default monthly token limit updated successfully",
+    data: result,
+  });
+});
+
 const getAuditLogs = catchAsyncFn(async (req: Request, res: Response) => {
   const result = await ChatService.getAuditLogs();
 
@@ -251,6 +281,8 @@ export const ChatController = {
   updateAllUsersTokenLimit,
   getGlobalTokenCap,
   updateGlobalTokenCap,
+  getDefaultTokenLimit,
+  updateDefaultTokenLimit,
   getAuditLogs,
   getUserUsageHistory,
   exportUsageToCsv,

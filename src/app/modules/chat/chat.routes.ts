@@ -42,6 +42,14 @@ router.patch(
   ChatController.updateGlobalTokenCap
 );
 
+router.get("/default-limit", checkAuth("admin"), ChatController.getDefaultTokenLimit);
+router.patch(
+  "/default-limit",
+  checkAuth("admin"),
+  validateRequest(ChatValidation.updateDefaultLimitSchema),
+  ChatController.updateDefaultTokenLimit
+);
+
 router.get("/audit-logs", checkAuth("admin"), ChatController.getAuditLogs);
 router.get("/usage/:userId/history", checkAuth("admin"), ChatController.getUserUsageHistory);
 

@@ -315,20 +315,25 @@ export const startNotificationScheduler = () => {
   );
   console.log("[SCHEDULER] Daily books push scheduler started successfully.");
 
-  // Monthly cron job at 12:00 AM on the 1st day of every month to reset all users' monthlyTokenLimit to 50000.
+  // Monthly cron job at 12:00 AM on the 1st day of every month to reset all users' monthlyTokenLimit to the configured default limit (defaulting to 50000).
   cron.schedule(
     "0 0 1 * *",
     async () => {
       try {
         console.log("[SCHEDULER] Running monthly token limit reset job...");
+        const configRecord = await prisma.appConfig.findUnique({
+          where: { key: "default_monthly_token_limit" },
+        });
+        const defaultLimit = configRecord ? Number(configRecord.value) : 50000;
+
         const result = await prisma.user.updateMany({
           data: {
-            monthlyTokenLimit: 50000,
+            monthlyTokenLimit: defaultLimit,
             hasSent90Warning: false,
             hasSent100Warning: false,
           },
         });
-        console.log(`[SCHEDULER] Successfully reset token limits for ${result.count} users.`);
+        console.log(`[SCHEDULER] Successfully reset token limits to ${defaultLimit} for ${result.count} users.`);
       } catch (error) {
         console.error("[SCHEDULER] Error running monthly token limit reset:", error);
       }

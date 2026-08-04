@@ -14,9 +14,14 @@ export const updateGlobalCapSchema = z.object({
   globalTokenCap: z.number().int().nonnegative(),
 });
 
+export const updateDefaultLimitSchema = z.object({
+  defaultTokenLimit: z.number().int().positive("Default limit must be greater than 0"),
+});
+
 export const ChatValidation = {
   chatMessageSchema,
   updateTokenLimitSchema,
   updateGlobalCapSchema,
+  updateDefaultLimitSchema,
 };
 
