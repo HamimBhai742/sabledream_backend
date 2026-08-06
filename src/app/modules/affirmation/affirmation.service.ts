@@ -136,7 +136,6 @@ const seedAffirmations = async () => {
     await prisma.affirmation.createMany({
       data: DEFAULT_AFFIRMATIONS,
     });
-    console.log(`[SEED] Seeded ${DEFAULT_AFFIRMATIONS.length} affirmations successfully.`);
   }
 };
 

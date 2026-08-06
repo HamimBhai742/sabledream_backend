@@ -13,23 +13,8 @@ const server = http.createServer(app);
 const startServer = async () => {
   try {
     await connectToDatabase();
-    const seedResult = await seedAdminFunction();
-    console.log(seedAdminFunction);
-    if (seedResult.status === "created") {
-      console.log(
-        `[seedAdmin] created admin: ${seedResult.email} (${seedResult.adminId})`,
-      );
-    } else if (seedResult.status === "exists") {
-      console.log(
-        `[seedAdmin] admin exists: ${seedResult.email} (${seedResult.adminId})`,
-      );
-    } else {
-      console.log(`[seedAdmin] skipped: ${seedResult.reason}`);
-    }
+    await seedAdminFunction();
     server.listen(PORT, () => {
-      console.log(
-        `Server is running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
-      );
       // Start the scheduled push notification checker
       startNotificationScheduler();
     });
@@ -63,8 +48,5 @@ process.on("unhandledRejection", (err: Error) => {
 
 // Handle SIGTERM (e.g., from Docker, Heroku, or K8s)
 process.on("SIGTERM", () => {
-  console.log("SIGTERM RECEIVED. Shutting down gracefully.");
-  server.close(() => {
-    console.log("💥 Process terminated!");
-  });
+  server.close();
 });

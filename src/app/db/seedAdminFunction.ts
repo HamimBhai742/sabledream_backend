@@ -10,7 +10,6 @@ export const seedAdminFunction = async (): Promise<TSeedAdminResult> => {
   const email = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD || "";
   const name = (process.env.ADMIN_SEED_NAME || "Admin").trim() || "Admin";
-  console.log(email, password);
   if (!email || !password) {
     return {
       status: "skipped",

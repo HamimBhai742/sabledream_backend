@@ -21,7 +21,6 @@ export const sendPushNotification = async (
     let response = null;
     try {
       response = await fcm.send(message);
-      console.log(`[FCM] Notification sent successfully. Response: ${response}`);
     } catch (fcmError) {
       console.error(`[FCM] Error sending push notification via Firebase:`, fcmError);
     }
@@ -37,7 +36,6 @@ export const sendPushNotification = async (
             data: data || {},
           },
         });
-        console.log(`[DATABASE] In-app notification logged in DB for user ${userId}`);
       } catch (dbError) {
         console.error(`[DATABASE] Failed to log notification in DB:`, dbError);
       }

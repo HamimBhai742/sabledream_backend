@@ -419,7 +419,6 @@ export const SubscriptionService = {
       });
     }
 
-    console.log(`[RevenueCat Webhook] Success: Handled ${eventType} for User ${userId}`);
     return { success: true, message: `Successfully handled event: ${eventType}` };
   },
 };

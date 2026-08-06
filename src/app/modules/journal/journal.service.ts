@@ -113,7 +113,6 @@ const createJournal = async (
 };
 
 const getMyJournals = async (userId: string, query: TJournalQuery) => {
-    console.log(userId,query)
   const { page, limit, skip } = getPagination(query);
 
   const where = buildJournalWhereFilter(query, userId);
@@ -449,7 +448,6 @@ const createCategory = async (userId: string, name: string) => {
 };
 
 const getMyCategories = async (userId: string) => {
-  console.log(userId);
   return prisma.journalCategory.findMany({
     where: {
       userId,

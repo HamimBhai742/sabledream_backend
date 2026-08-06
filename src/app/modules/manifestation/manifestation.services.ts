@@ -7,7 +7,6 @@ const createManifestation = async (userId: string, data: any, file?: Express.Mul
 
   if (file) {
     const uploadedImage = await uploadBufferToCloudinary(file.buffer, 'manifestations');
-    console.log(uploadedImage)
     imageUrl = uploadedImage?.secure_url;
     imageKey = uploadedImage?.public_id;
   }

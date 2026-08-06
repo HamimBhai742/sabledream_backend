@@ -21,7 +21,6 @@ const createJournal = catchAsyncFn(async (req: AuthRequest, res: Response) => {
   if (!userId) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
   }
-  console.log(req.body, req.file);
   const result = await JournalService.createJournal(userId, req.body, req.file);
 
   sendResponse(res, {

@@ -75,7 +75,7 @@ export const startNotificationScheduler = () => {
     try {
       const now = new Date();
 
-      console.log(`[SCHEDULER] Checking reminders at ${now.toISOString()}`);
+
 
       // Reminder time is compared in each user's timezone, not the server timezone.
       const reminders = await prisma.reminder.findMany({
@@ -228,14 +228,13 @@ export const startNotificationScheduler = () => {
       console.error("[SCHEDULER] Error running reminder notification scheduler:", error);
     }
   });
-  console.log("[SCHEDULER] Reminder notifications scheduler started successfully.");
+
 
   // Daily push at 4 AM EST from books management table (DailyReflection) to the app.
   cron.schedule(
     "0 4 * * *",
     async () => {
       try {
-        console.log("[SCHEDULER] Running daily books push notification at 4 AM EST");
         // Get current date in America/New_York (EST/EDT) timezone formatted as MM/DD/YYYY
         const todayStr = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/New_York",
@@ -249,7 +248,6 @@ export const startNotificationScheduler = () => {
         });
 
         if (!dailyReflection) {
-          console.log(`[SCHEDULER] No daily reflection found for date ${todayStr}. Skipping books push notification.`);
           return;
         }
 
@@ -257,7 +255,6 @@ export const startNotificationScheduler = () => {
         const book2 = dailyReflection.book2Title?.trim();
 
         if (!book1 && !book2) {
-          console.log(`[SCHEDULER] No books found in daily reflection for date ${todayStr}. Skipping books push notification.`);
           return;
         }
 
@@ -288,7 +285,7 @@ export const startNotificationScheduler = () => {
           },
         });
 
-        console.log(`[SCHEDULER] Found ${users.length} active users with FCM tokens to push.`);
+
 
         for (const user of users) {
           if (!user.fcmToken) continue;
@@ -304,7 +301,6 @@ export const startNotificationScheduler = () => {
             user.id
           );
         }
-        console.log("[SCHEDULER] Completed sending daily books push notification.");
       } catch (error) {
         console.error("[SCHEDULER] Error sending daily books push notification:", error);
       }
@@ -313,14 +309,13 @@ export const startNotificationScheduler = () => {
       timezone: "America/New_York",
     }
   );
-  console.log("[SCHEDULER] Daily books push scheduler started successfully.");
+
 
   // Monthly cron job at 12:00 AM on the 1st day of every month to reset all users' monthlyTokenLimit to the configured default limit (defaulting to 50000).
   cron.schedule(
     "0 0 1 * *",
     async () => {
       try {
-        console.log("[SCHEDULER] Running monthly token limit reset job...");
         const configRecord = await prisma.appConfig.findUnique({
           where: { key: "default_monthly_token_limit" },
         });
@@ -333,7 +328,7 @@ export const startNotificationScheduler = () => {
             hasSent100Warning: false,
           },
         });
-        console.log(`[SCHEDULER] Successfully reset token limits to ${defaultLimit} for ${result.count} users.`);
+
       } catch (error) {
         console.error("[SCHEDULER] Error running monthly token limit reset:", error);
       }
@@ -342,5 +337,5 @@ export const startNotificationScheduler = () => {
       timezone: "America/New_York",
     }
   );
-  console.log("[SCHEDULER] Monthly token limit reset scheduler started successfully.");
+
 };
