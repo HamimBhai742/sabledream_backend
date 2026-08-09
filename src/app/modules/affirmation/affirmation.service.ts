@@ -235,8 +235,30 @@ const getTodayAffirmation = async () => {
         dailyReflection.journalPrompt2,
       ].filter(Boolean);
 
+      // Find or create a corresponding Affirmation in the Affirmation table
+      let matchedAffirmation = await prisma.affirmation.findFirst({
+        where: {
+          text: dailyReflection.affirmation,
+          goal: dailyReflection.reflection,
+        },
+      });
+
+      if (!matchedAffirmation) {
+        matchedAffirmation = await prisma.affirmation.create({
+          data: {
+            text: dailyReflection.affirmation,
+            category: "Affirmation",
+            goal: dailyReflection.reflection,
+            mood: "CALM",
+            timeOfDay: "Morning",
+            subStatements,
+            tags: ["Daily"],
+          },
+        });
+      }
+
       return {
-        id: dailyReflection.id,
+        id: matchedAffirmation.id,
         text: dailyReflection.affirmation,
         category: "Affirmation",
         goal: dailyReflection.reflection,
@@ -277,7 +299,9 @@ const getTodayAffirmation = async () => {
 };
 
 const saveAffirmation = async (userId: string, affirmationId: string) => {
-  const affirmation = await prisma.affirmation.findUnique({
+  let targetAffirmationId = affirmationId;
+
+  let affirmation = await prisma.affirmation.findUnique({
     where: { id: affirmationId },
   });
 
@@ -288,10 +312,34 @@ const saveAffirmation = async (userId: string, affirmationId: string) => {
     });
 
     if (dailyReflection) {
-      throw new AppError(httpStatus.BAD_REQUEST, "Daily reflections cannot be saved as affirmations");
-    }
+      // Find or create a corresponding Affirmation record
+      let matchedAffirmation = await prisma.affirmation.findFirst({
+        where: {
+          text: dailyReflection.affirmation,
+          goal: dailyReflection.reflection,
+        },
+      });
 
-    throw new AppError(httpStatus.NOT_FOUND, "Affirmation not found");
+      if (!matchedAffirmation) {
+        matchedAffirmation = await prisma.affirmation.create({
+          data: {
+            text: dailyReflection.affirmation,
+            category: "Affirmation",
+            goal: dailyReflection.reflection,
+            mood: "CALM",
+            timeOfDay: "Morning",
+            subStatements: [
+              dailyReflection.journalPrompt1,
+              dailyReflection.journalPrompt2,
+            ].filter(Boolean),
+            tags: ["Daily"],
+          },
+        });
+      }
+      targetAffirmationId = matchedAffirmation.id;
+    } else {
+      throw new AppError(httpStatus.NOT_FOUND, "Affirmation not found");
+    }
   }
 
   // Check if already saved
@@ -299,7 +347,7 @@ const saveAffirmation = async (userId: string, affirmationId: string) => {
     where: {
       userId_affirmationId: {
         userId,
-        affirmationId,
+        affirmationId: targetAffirmationId,
       },
     },
   });
@@ -311,7 +359,7 @@ const saveAffirmation = async (userId: string, affirmationId: string) => {
   await prisma.savedAffirmation.create({
     data: {
       userId,
-      affirmationId,
+      affirmationId: targetAffirmationId,
     },
   });
 
@@ -319,11 +367,37 @@ const saveAffirmation = async (userId: string, affirmationId: string) => {
 };
 
 const unsaveAffirmation = async (userId: string, affirmationId: string) => {
+  let targetAffirmationId = affirmationId;
+
+  const affirmation = await prisma.affirmation.findUnique({
+    where: { id: affirmationId },
+  });
+
+  if (!affirmation) {
+    // Check if it's a daily reflection
+    const dailyReflection = await prisma.dailyReflection.findUnique({
+      where: { id: affirmationId },
+    });
+
+    if (dailyReflection) {
+      const matchedAffirmation = await prisma.affirmation.findFirst({
+        where: {
+          text: dailyReflection.affirmation,
+          goal: dailyReflection.reflection,
+        },
+      });
+
+      if (matchedAffirmation) {
+        targetAffirmationId = matchedAffirmation.id;
+      }
+    }
+  }
+
   const existingSaved = await prisma.savedAffirmation.findUnique({
     where: {
       userId_affirmationId: {
         userId,
-        affirmationId,
+        affirmationId: targetAffirmationId,
       },
     },
   });
@@ -336,7 +410,7 @@ const unsaveAffirmation = async (userId: string, affirmationId: string) => {
     where: {
       userId_affirmationId: {
         userId,
-        affirmationId,
+        affirmationId: targetAffirmationId,
       },
     },
   });
