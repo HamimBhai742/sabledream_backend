@@ -222,8 +222,8 @@ export const ChatService = {
     const promptTokens = monthlyUsage?.promptTokens ?? 0;
     const completionTokens = monthlyUsage?.completionTokens ?? 0;
     const messageCount = monthlyUsage?.messageCount ?? 0;
-    const createdAt = monthlyUsage?.createdAt ?? null;
-    const updatedAt = monthlyUsage?.updatedAt ?? null;
+    const createdAt = monthlyUsage?.createdAt ?? new Date();
+    const updatedAt = monthlyUsage?.updatedAt ?? new Date();
 
     const usagePercentage = limit > 0 ? parseFloat(((totalTokens / limit) * 100).toFixed(2)) : 0;
 
@@ -695,8 +695,8 @@ export const ChatService = {
               projectedTokens: 0,
               projectedCost: 0,
               monthYear: targetMonth,
-              createdAt: null,
-              updatedAt: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
             },
           };
         }
@@ -739,8 +739,8 @@ export const ChatService = {
               projectedTokens: 0,
               projectedCost: 0,
               monthYear: targetMonth,
-              createdAt: null,
-              updatedAt: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
             },
           };
         }
