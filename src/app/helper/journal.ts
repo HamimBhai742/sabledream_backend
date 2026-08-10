@@ -22,15 +22,61 @@ const parseCommaSeparatedValues = (value?: string) => {
     .filter(Boolean);
 };
 
+const getNYOffsetMs = (date: Date): number => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const map: Record<string, string> = {};
+  parts.forEach((p) => {
+    map[p.type] = p.value;
+  });
+
+  const hour = Number(map.hour) === 24 ? 0 : Number(map.hour);
+  const nyLocal = Date.UTC(
+    Number(map.year),
+    Number(map.month) - 1,
+    Number(map.day),
+    hour,
+    Number(map.minute),
+    Number(map.second)
+  );
+  return nyLocal - date.getTime();
+};
+
+const getUTCFromNYTime = (nyTimeStr: string, offsetMs: number): Date => {
+  const localDate = new Date(nyTimeStr + "Z");
+  return new Date(localDate.getTime() - offsetMs);
+};
+
 const getDateRangeFilter = (query: TJournalQuery) => {
   const now = new Date();
+  const offsetMs = getNYOffsetMs(now);
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(now);
+  const map: Record<string, string> = {};
+  parts.forEach((p) => {
+    map[p.type] = p.value;
+  });
+  const nyDateStr = `${map.year}-${map.month}-${map.day}`;
+  const nyDate = new Date(nyDateStr + "T00:00:00.000Z");
 
   if (query.dateRange === "today") {
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
+    const start = getUTCFromNYTime(`${nyDateStr}T00:00:00.000`, offsetMs);
+    const end = getUTCFromNYTime(`${nyDateStr}T23:59:59.999`, offsetMs);
 
     return {
       gte: start,
@@ -39,15 +85,15 @@ const getDateRangeFilter = (query: TJournalQuery) => {
   }
 
   if (query.dateRange === "thisWeek") {
-    const start = new Date(now);
-    const day = start.getDay();
+    const dayOfWeek = nyDate.getUTCDay();
+    const diff = nyDate.getUTCDate() - dayOfWeek;
+    const startOfWeek = new Date(nyDate);
+    startOfWeek.setUTCDate(diff);
 
-    const diff = start.getDate() - day;
-    start.setDate(diff);
-    start.setHours(0, 0, 0, 0);
+    const startOfWeekStr = `${startOfWeek.getUTCFullYear()}-${String(startOfWeek.getUTCMonth() + 1).padStart(2, "0")}-${String(startOfWeek.getUTCDate()).padStart(2, "0")}`;
 
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
+    const start = getUTCFromNYTime(`${startOfWeekStr}T00:00:00.000`, offsetMs);
+    const end = getUTCFromNYTime(`${nyDateStr}T23:59:59.999`, offsetMs);
 
     return {
       gte: start,
@@ -56,11 +102,10 @@ const getDateRangeFilter = (query: TJournalQuery) => {
   }
 
   if (query.dateRange === "thisMonth") {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    start.setHours(0, 0, 0, 0);
+    const startOfMonthStr = `${map.year}-${map.month}-01`;
 
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
+    const start = getUTCFromNYTime(`${startOfMonthStr}T00:00:00.000`, offsetMs);
+    const end = getUTCFromNYTime(`${nyDateStr}T23:59:59.999`, offsetMs);
 
     return {
       gte: start,
@@ -76,15 +121,15 @@ const getDateRangeFilter = (query: TJournalQuery) => {
     const dateFilter: Prisma.DateTimeFilter = {};
 
     if (query.fromDate) {
-      const fromDate = new Date(query.fromDate);
-      fromDate.setHours(0, 0, 0, 0);
-      dateFilter.gte = fromDate;
+      const fromDateStr = query.fromDate.split("T")[0];
+      const start = getUTCFromNYTime(`${fromDateStr}T00:00:00.000`, offsetMs);
+      dateFilter.gte = start;
     }
 
     if (query.toDate) {
-      const toDate = new Date(query.toDate);
-      toDate.setHours(23, 59, 59, 999);
-      dateFilter.lte = toDate;
+      const toDateStr = query.toDate.split("T")[0];
+      const end = getUTCFromNYTime(`${toDateStr}T23:59:59.999`, offsetMs);
+      dateFilter.lte = end;
     }
 
     return dateFilter;

@@ -83,6 +83,7 @@ const createJournal = async (
   const journal = await prisma.journal.create({
     data: {
       ...journalData,
+      createdAt: journalData.createdAt ? new Date(journalData.createdAt) : undefined,
       userId,
       imageUrl,
       imageKey,
@@ -273,6 +274,7 @@ const updateJournal = async (
     },
     data: {
       ...journalData,
+      createdAt: journalData.createdAt ? new Date(journalData.createdAt) : undefined,
       imageUrl,
       imageKey,
       categoryIds: categoryIds ?? existingJournal.categoryIds,

@@ -12,6 +12,7 @@ export const createJournalSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
 
   categoryIds: z.array(z.string()).optional(),
+  createdAt: z.string().optional(),
 });
 
 export const updateJournalSchema = createJournalSchema.partial().extend({

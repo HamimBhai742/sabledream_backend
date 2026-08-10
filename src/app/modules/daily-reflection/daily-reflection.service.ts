@@ -361,12 +361,19 @@ const getDailyReflectionByDate = async (dateStr?: string) => {
   if (dateStr) {
     targetDate = normalizeDateString(dateStr);
   } else {
-    // Default to today
-    const today = new Date();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-    const year = today.getFullYear();
-    targetDate = `${month}/${day}/${year}`;
+    // Default to today in target timezone (America/New_York)
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const partMap: Record<string, string> = {};
+    parts.forEach((p) => {
+      partMap[p.type] = p.value;
+    });
+    targetDate = `${partMap.month}/${partMap.day}/${partMap.year}`;
   }
 
   const reflection = await prisma.dailyReflection.findUnique({
