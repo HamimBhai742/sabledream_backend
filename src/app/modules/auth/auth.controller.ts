@@ -157,13 +157,13 @@ const googleLoginController = catchAsyncFn(
 
 const appleLoginController = catchAsyncFn(
   async (req: Request, res: Response) => {
-    const { idToken, fullName } = req.body;
+    const { idToken, fullName, email } = req.body;
 
     if (!idToken) {
       throw new AppError(httpStatus.BAD_REQUEST, "Apple idToken is required");
     }
 
-    const result = await AuthService.appleLoginService(idToken, fullName);
+    const result = await AuthService.appleLoginService(idToken, fullName, email);
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
@@ -171,8 +171,6 @@ const appleLoginController = catchAsyncFn(
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
-    
 
     sendResponse(res, {
       statusCode: httpStatus.OK,

@@ -203,6 +203,21 @@
         },
         {
           "name": "Google Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.accessToken) {",
+                  "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set(\"token\", jsonData.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -213,17 +228,37 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idToken\": \"GOOGLE_ID_TOKEN\"\n}"
+              "raw": "{\n  \"idToken\": \"<FIREBASE_GOOGLE_ID_TOKEN>\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/google-login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "google-login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google-login"
+              ]
             }
           }
         },
         {
           "name": "Apple Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.accessToken) {",
+                  "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set(\"token\", jsonData.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -234,12 +269,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idToken\": \"APPLE_ID_TOKEN\",\n  \"fullName\": {\n    \"givenName\": \"John\",\n    \"familyName\": \"Doe\"\n  }\n}"
+              "raw": "{\n  \"idToken\": \"<FIREBASE_APPLE_ID_TOKEN>\",\n  \"fullName\": {\n    \"givenName\": \"John\",\n    \"familyName\": \"Doe\"\n  },\n  \"email\": \"user@example.com\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/apple-login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "apple-login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "apple-login"
+              ]
             }
           }
         },

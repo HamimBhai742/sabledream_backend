@@ -6,14 +6,11 @@ import { createAuthTokens } from "../../utils/createAuthTokens";
 import crypto from "crypto";
 import { forgotPasswordTemplate } from "../../utils/emailTemplates/forgetPassword";
 import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPasswordSuccess";
-import { OAuth2Client } from "google-auth-library";
-import { verifyAppleToken } from "../../utils/apple.token";
+import { verifyFirebaseGoogleToken, verifyFirebaseAppleToken } from "../../utils/firebase.token";
 import verifyToken from "../../utils/verifyToken";
 import createToken from "../../utils/createJwtToken";
 import { welcomeSableDreamTemplate } from "../../utils/emailTemplates/signUpSuccess";
 import { generatePermanentUserId, ensurePermanentUserId } from "../../utils/generatePermanentUserId";
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const registerUser = async (payload: any) => {
   // Check if the user already exists
@@ -294,28 +291,25 @@ const verifyOtp = async (payload: any) => {
 };
 
 const googleLoginService = async (idToken: string) => {
-  const ticket = await googleClient.verifyIdToken({
-    idToken,
-    audience: [
-      process.env.GOOGLE_ANDROID_CLIENT_ID!,
-      process.env.GOOGLE_IOS_CLIENT_ID!,
-    ],
-  });
-
-  const payload = ticket.getPayload();
+  const payload = await verifyFirebaseGoogleToken(idToken);
 
   if (!payload || !payload.email) {
-    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid Google token");
+    throw new AppError(httpStatus.UNAUTHORIZED, "Email not found in Google Firebase token");
   }
 
-  const { email, name, picture, sub, email_verified } = payload;
+  const { email, name, picture, uid, email_verified } = payload;
 
-  if (!email_verified) {
+  if (email_verified === false) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Google email is not verified");
   }
 
-  let user = await prisma.user.findUnique({
-    where: { email }
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { providerId: uid },
+        { email: email },
+      ],
+    },
   });
 
   if (!user) {
@@ -328,10 +322,10 @@ const googleLoginService = async (idToken: string) => {
     user = await prisma.user.create({
       data: {
         email,
-        name: name || "Google User",
-        image: picture,
+        name: name || email.split("@")[0] || "Google User",
+        image: picture || null,
         provider: "GOOGLE",
-        providerId: sub,
+        providerId: uid,
         permanentId,
         isVerified: true,
         monthlyTokenLimit: defaultLimit,
@@ -343,8 +337,8 @@ const googleLoginService = async (idToken: string) => {
       where: { id: user.id },
       data: {
         provider: user.provider || "GOOGLE",
-        providerId: user.providerId || sub,
-        image: user.image || picture,
+        providerId: user.providerId || uid,
+        image: user.image || picture || null,
         permanentId,
         isVerified: true,
       },
@@ -365,21 +359,43 @@ const googleLoginService = async (idToken: string) => {
   };
 };
 
-const appleLoginService = async (idToken: string, fullName?: string) => {
-  const payload = await verifyAppleToken(idToken);
+const appleLoginService = async (
+  idToken: string,
+  fullName?: string | { givenName?: string; familyName?: string },
+  userEmail?: string
+) => {
+  const payload = await verifyFirebaseAppleToken(idToken);
 
-  if (!payload || !payload.email || !payload.sub) {
-    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid Apple login");
+  if (!payload || !payload.uid) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid Apple login token");
   }
 
-  const email = payload.email;
-  const providerId = payload.sub;
+  const providerId = payload.uid;
+  const email = payload.email || userEmail;
 
-  let user = await prisma.user.findUnique({
-    where: { email },
+  // Format full name if provided as an object or string
+  let formattedName = "";
+  if (typeof fullName === "string") {
+    formattedName = fullName.trim();
+  } else if (fullName && typeof fullName === "object") {
+    formattedName = `${fullName.givenName || ""} ${fullName.familyName || ""}`.trim();
+  }
+
+  // Find user by providerId first, or by email if available
+  let user = await prisma.user.findFirst({
+    where: email
+      ? { OR: [{ providerId }, { email }] }
+      : { providerId },
   });
 
   if (!user) {
+    if (!email) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Email is required for new Apple account registration"
+      );
+    }
+
     const permanentId = await generatePermanentUserId();
     const configRecord = await prisma.appConfig.findUnique({
       where: { key: "default_monthly_token_limit" },
@@ -389,7 +405,7 @@ const appleLoginService = async (idToken: string, fullName?: string) => {
     user = await prisma.user.create({
       data: {
         email,
-        name: fullName || payload.name || "Apple User",
+        name: formattedName || payload.name || email.split("@")[0] || "Apple User",
         provider: "APPLE",
         providerId,
         permanentId,
@@ -402,6 +418,7 @@ const appleLoginService = async (idToken: string, fullName?: string) => {
     user = await prisma.user.update({
       where: { id: user.id },
       data: {
+        name: formattedName && user.name === "Apple User" ? formattedName : user.name,
         provider: user.provider || "APPLE",
         providerId: user.providerId || providerId,
         permanentId,
