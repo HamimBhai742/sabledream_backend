@@ -107,8 +107,8 @@ export const startNotificationScheduler = () => {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
+              "Journal Reminder",
               "Pause. Breathe. Reflect. Your Sable Dreams journal is ready when you are. 🪞",
-              "A daily reminder to open your journal. The woman you are becoming wrote something for you - come read it.",
               {
                 screen: "journal",
                 frequency: "daily",
@@ -119,8 +119,8 @@ export const startNotificationScheduler = () => {
           if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
             await sendPushNotification(
               fcmToken,
-              "Your week in reflection",
-              "A weekly prompt to look back at your entries, celebrate your consistency, and set your intention for the week ahead.",
+              "Journal Reminder",
+              "Your week in reflection - A weekly prompt to look back at your entries, celebrate your consistency, and set your intention for the week ahead.",
               {
                 screen: "journal",
                 frequency: "weekly",
@@ -131,8 +131,8 @@ export const startNotificationScheduler = () => {
           if (reminder.monthlyEnabled && monthlyDue) {
             await sendPushNotification(
               fcmToken,
-              "A month of becoming",
-              "A monthly reminder to revisit your journey - how much you have grown, healed, and stepped into yourself.",
+              "Journal Reminder",
+              "A month of becoming - A monthly reminder to revisit your journey - how much you have grown, healed, and stepped into yourself.",
               {
                 screen: "journal",
                 frequency: "monthly",
@@ -144,8 +144,8 @@ export const startNotificationScheduler = () => {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
+              "Mood Reminder",
               "How is your energy? Select your mood for today 💖",
-              "A daily check-in to stay connected to your inner world. Name the feeling - that is the first step of healing.",
               {
                 screen: "mood",
                 frequency: "daily",
@@ -156,8 +156,8 @@ export const startNotificationScheduler = () => {
           if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
             await sendPushNotification(
               fcmToken,
-              "Your mood this week",
-              "A weekly overview of your emotional patterns. The woman who feels deeply, heals deeply - see your journey unfold.",
+              "Mood Reminder",
+              "Your mood this week - A weekly overview of your emotional patterns. The woman who feels deeply, heals deeply - see your journey unfold.",
               {
                 screen: "mood",
                 frequency: "weekly",
@@ -168,8 +168,8 @@ export const startNotificationScheduler = () => {
           if (reminder.monthlyEnabled && monthlyDue) {
             await sendPushNotification(
               fcmToken,
-              "Moments of becoming",
-              "Every emotion you named this month was a step into your becoming. A monthly look at the emotional growth you have made.",
+              "Mood Reminder",
+              "Moments of becoming - Every emotion you named this month was a step into your becoming. A monthly look at the emotional growth you have made.",
               {
                 screen: "mood",
                 frequency: "monthly",
@@ -186,8 +186,8 @@ export const startNotificationScheduler = () => {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
               fcmToken,
+              "Affirmation Reminder",
               "A new affirmation has arrived. your moment of centering awaits ✨",
-              `Today's Affirmation: ${affirmationText}`,
               {
                 screen: "affirmation",
                 frequency: "daily",
@@ -199,8 +199,8 @@ export const startNotificationScheduler = () => {
           if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
             await sendPushNotification(
               fcmToken,
-              "Words for your becoming",
-              `Weekly Inspiration: ${affirmationText}`,
+              "Affirmation Reminder",
+              `Words for your becoming - ${affirmationText}`,
               {
                 screen: "affirmation",
                 frequency: "weekly",
@@ -212,8 +212,8 @@ export const startNotificationScheduler = () => {
           if (reminder.monthlyEnabled && monthlyDue) {
             await sendPushNotification(
               fcmToken,
-              "A love letter from her",
-              `Monthly Reflection: ${affirmationText}`,
+              "Affirmation Reminder",
+              `A love letter from her - ${affirmationText}`,
               {
                 screen: "affirmation",
                 frequency: "monthly",
