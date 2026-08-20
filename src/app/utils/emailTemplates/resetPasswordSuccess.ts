@@ -54,7 +54,7 @@ export const resetPasswordSuccessTemplate = async (
             ">
               <!-- Logo -->
               <img
-                src="https://imglink.cc/cdn/vnw0bUtBsF.png"
+                src="https://imglink.cc/cdn/K5i74ZtPzJ.png"
                 height="44"
                 alt="Logo"
                 style="display: block; margin: 0 auto 22px;"
@@ -311,7 +311,7 @@ export const resetPasswordSuccessTemplate = async (
               <p style="margin: 0 0 8px; font-size: 11px; color: #f4a7be; letter-spacing: 6px;">♡ ♡ ♡</p>
 
               <img
-                src="https://imglink.cc/cdn/vnw0bUtBsF.png"
+                src="https://imglink.cc/cdn/K5i74ZtPzJ.png"
                 height="24"
                 alt="Logo"
                 style="display: block; margin: 0 auto 14px; opacity: 0.5;"
