@@ -2,6 +2,7 @@ import { prisma } from "../../lib/prisma";
 import config from "../../config";
 import AppError from "../../error/AppError";
 import httpStatus from "http-status";
+import { subscriptionConfirmationTemplate } from "../../utils/emailTemplates/subscriptionConfirmation";
 
 // Map Product ID to plan name, cost, and frequency
 const PRODUCT_PLAN_MAP: Record<string, { name: string; type: "monthly" | "annual"; amount: number }> = {
@@ -394,6 +395,17 @@ export const SubscriptionService = {
         ...subscriptionData,
       },
     });
+
+    if (eventType === "INITIAL_PURCHASE") {
+      try {
+        await subscriptionConfirmationTemplate({
+          userName: user.name,
+          email: user.email,
+        });
+      } catch (err) {
+        console.error("[RevenueCat Webhook] Failed to send subscription confirmation email:", err);
+      }
+    }
 
     // Create a transaction record for charges or refunds
     if (event.transaction_id && event.price !== undefined) {

@@ -142,29 +142,6 @@ export const welcomeSableDreamTemplate = async (
     overflow: hidden;
   }
 
-  /* Subtle watermark in body */
-  .body-watermark {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 0;
-  }
-  .body-watermark span {
-    display: block;
-    font-family: Georgia, serif;
-    font-style: italic;
-    font-size: 11px;
-    color: rgba(221,148,193,0.12);
-    letter-spacing: 1px;
-    line-height: 2.2;
-    white-space: nowrap;
-    transform: rotate(-8deg);
-    transform-origin: center;
-    width: 140%;
-    margin-left: -20%;
-  }
-
   .body-content { position: relative; z-index: 1; }
 
   .greeting {
@@ -438,67 +415,20 @@ export const welcomeSableDreamTemplate = async (
 
     <!-- Watermark rows -->
     <div class="hero-watermark" aria-hidden="true">
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
+      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
+      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
+      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
+      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
+      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
+      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
     </div>
 
     <div class="hero-content">
 
       <!-- Wax Seal SVG -->
-      <div class="wax-seal">
-        <svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-          <!-- Wax blob shape -->
-          <ellipse cx="48" cy="50" rx="44" ry="42" fill="#c08090" opacity="0.35"/>
-          <!-- Main wax seal circle -->
-          <circle cx="48" cy="47" r="40" fill="#C084A0"/>
-          <!-- Inner border ring -->
-          <circle cx="48" cy="47" r="35" fill="none" stroke="#d4a060" stroke-width="1.5" opacity="0.9"/>
-          <!-- Second inner ring -->
-          <circle cx="48" cy="47" r="31" fill="none" stroke="#d4a060" stroke-width="0.8" opacity="0.7"/>
-          <!-- Crown -->
-          <g transform="translate(30, 20)" fill="#d4a060">
-            <rect x="3" y="14" width="30" height="5" rx="1"/>
-            <polygon points="3,14 6,6 12,12 18,4 24,12 30,6 33,14"/>
-            <circle cx="18" cy="3" r="2"/>
-          </g>
-          <!-- Laurel left -->
-          <g transform="translate(12, 38)" fill="none" stroke="#d4a060" stroke-width="1.2" opacity="0.85">
-            <path d="M0 18 Q4 12 2 6"/>
-            <path d="M2 15 Q8 10 6 4"/>
-            <path d="M4 20 Q0 14 4 8"/>
-            <path d="M1 23 Q6 18 4 12"/>
-            <path d="M3 8 Q6 4 10 6"/>
-            <path d="M5 13 Q8 9 12 11"/>
-            <path d="M4 18 Q8 14 12 16"/>
-            <path d="M5 23 Q9 19 13 21"/>
-          </g>
-          <!-- Laurel right -->
-          <g transform="translate(72, 38) scale(-1,1)" fill="none" stroke="#d4a060" stroke-width="1.2" opacity="0.85">
-            <path d="M0 18 Q4 12 2 6"/>
-            <path d="M2 15 Q8 10 6 4"/>
-            <path d="M4 20 Q0 14 4 8"/>
-            <path d="M1 23 Q6 18 4 12"/>
-            <path d="M3 8 Q6 4 10 6"/>
-            <path d="M5 13 Q8 9 12 11"/>
-            <path d="M4 18 Q8 14 12 16"/>
-            <path d="M5 23 Q9 19 13 21"/>
-          </g>
-          <!-- SD letters -->
-          <text x="48" y="60" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#d4a060" text-anchor="middle" letter-spacing="1">SD</text>
-          <!-- Small flowers bottom -->
-          <g fill="#d4a060" opacity="0.8">
-            <circle cx="36" cy="70" r="2"/>
-            <circle cx="48" cy="73" r="2"/>
-            <circle cx="60" cy="70" r="2"/>
-          </g>
-        </svg>
+      <!-- Wax Seal Stamp -->
+      <div class="wax-seal" style="margin-bottom: 18px;">
+        <img src="https://imglink.cc/cdn/K5i74ZtPzJ.png" alt="Sable Dreams Logo" width="72" height="72" style="display: block; margin: 0 auto; border: none; outline: none; text-decoration: none;" />
       </div>
 
       <!-- Title -->
@@ -517,24 +447,6 @@ export const welcomeSableDreamTemplate = async (
   <!-- BODY                                     -->
   <!-- ════════════════════════════════════════ -->
   <div class="body-section">
-
-    <!-- Subtle watermark -->
-    <div class="body-watermark" aria-hidden="true">
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-      <span>sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams — sable dreams</span>
-    </div>
 
     <div class="body-content">
 
@@ -626,12 +538,8 @@ export const welcomeSableDreamTemplate = async (
     <div class="footer-hearts">♡ &nbsp; ♡ &nbsp; ♡</div>
 
     <!-- Footer wax seal (smaller) -->
-    <div class="footer-seal">
-      <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="26" cy="26" r="24" fill="#C084A0"/>
-        <circle cx="26" cy="26" r="20" fill="none" stroke="#d4a060" stroke-width="1.2" opacity="0.85"/>
-        <text x="26" y="31" font-family="Georgia, serif" font-size="13" font-weight="700" fill="#d4a060" text-anchor="middle">SD</text>
-      </svg>
+    <div class="footer-seal" style="margin-bottom: 14px;">
+      <img src="https://imglink.cc/cdn/K5i74ZtPzJ.png" alt="Sable Dreams Logo" width="52" height="52" style="display: block; margin: 0 auto; border: none; outline: none; text-decoration: none;" />
     </div>
 
     <div class="footer-brand">Sable Dreams</div>
