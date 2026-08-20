@@ -22,46 +22,60 @@ const parseCommaSeparatedValues = (value?: string) => {
     .filter(Boolean);
 };
 
-const getNYOffsetMs = (date: Date): number => {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-  const parts = formatter.formatToParts(date);
-  const map: Record<string, string> = {};
-  parts.forEach((p) => {
-    map[p.type] = p.value;
-  });
+export const getOffsetMs = (date: Date, timeZone: string): number => {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const map: Record<string, string> = {};
+    parts.forEach((p) => {
+      map[p.type] = p.value;
+    });
 
-  const hour = Number(map.hour) === 24 ? 0 : Number(map.hour);
-  const nyLocal = Date.UTC(
-    Number(map.year),
-    Number(map.month) - 1,
-    Number(map.day),
-    hour,
-    Number(map.minute),
-    Number(map.second)
-  );
-  return nyLocal - date.getTime();
+    const hour = Number(map.hour) === 24 ? 0 : Number(map.hour);
+    const local = Date.UTC(
+      Number(map.year),
+      Number(map.month) - 1,
+      Number(map.day),
+      hour,
+      Number(map.minute),
+      Number(map.second)
+    );
+    return local - date.getTime();
+  } catch (error) {
+    console.error(`[TimeZone] Invalid timezone ${timeZone}:`, error);
+    return 0;
+  }
 };
 
-const getUTCFromNYTime = (nyTimeStr: string, offsetMs: number): Date => {
-  const localDate = new Date(nyTimeStr + "Z");
-  return new Date(localDate.getTime() - offsetMs);
+export const getUTCFromLocalTime = (localTimeStr: string, timeZone: string): Date => {
+  if (localTimeStr.includes("Z") || /[+-]\d{2}:?\d{2}$/.test(localTimeStr)) {
+    return new Date(localTimeStr);
+  }
+
+  const tempDate = new Date(localTimeStr.endsWith("Z") ? localTimeStr : localTimeStr + "Z");
+  if (isNaN(tempDate.getTime())) {
+    return new Date(localTimeStr);
+  }
+
+  const offsetMs = getOffsetMs(tempDate, timeZone);
+  return new Date(tempDate.getTime() - offsetMs);
 };
 
-const getDateRangeFilter = (query: TJournalQuery) => {
+const getDateRangeFilter = (query: TJournalQuery, timeZone: string) => {
   const now = new Date();
-  const offsetMs = getNYOffsetMs(now);
+  const offsetMs = getOffsetMs(now, timeZone);
 
   const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
+    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -75,8 +89,8 @@ const getDateRangeFilter = (query: TJournalQuery) => {
   const nyDate = new Date(nyDateStr + "T00:00:00.000Z");
 
   if (query.dateRange === "today") {
-    const start = getUTCFromNYTime(`${nyDateStr}T00:00:00.000`, offsetMs);
-    const end = getUTCFromNYTime(`${nyDateStr}T23:59:59.999`, offsetMs);
+    const start = getUTCFromLocalTime(`${nyDateStr}T00:00:00.000`, timeZone);
+    const end = getUTCFromLocalTime(`${nyDateStr}T23:59:59.999`, timeZone);
 
     return {
       gte: start,
@@ -92,8 +106,8 @@ const getDateRangeFilter = (query: TJournalQuery) => {
 
     const startOfWeekStr = `${startOfWeek.getUTCFullYear()}-${String(startOfWeek.getUTCMonth() + 1).padStart(2, "0")}-${String(startOfWeek.getUTCDate()).padStart(2, "0")}`;
 
-    const start = getUTCFromNYTime(`${startOfWeekStr}T00:00:00.000`, offsetMs);
-    const end = getUTCFromNYTime(`${nyDateStr}T23:59:59.999`, offsetMs);
+    const start = getUTCFromLocalTime(`${startOfWeekStr}T00:00:00.000`, timeZone);
+    const end = getUTCFromLocalTime(`${nyDateStr}T23:59:59.999`, timeZone);
 
     return {
       gte: start,
@@ -104,8 +118,8 @@ const getDateRangeFilter = (query: TJournalQuery) => {
   if (query.dateRange === "thisMonth") {
     const startOfMonthStr = `${map.year}-${map.month}-01`;
 
-    const start = getUTCFromNYTime(`${startOfMonthStr}T00:00:00.000`, offsetMs);
-    const end = getUTCFromNYTime(`${nyDateStr}T23:59:59.999`, offsetMs);
+    const start = getUTCFromLocalTime(`${startOfMonthStr}T00:00:00.000`, timeZone);
+    const end = getUTCFromLocalTime(`${nyDateStr}T23:59:59.999`, timeZone);
 
     return {
       gte: start,
@@ -122,13 +136,13 @@ const getDateRangeFilter = (query: TJournalQuery) => {
 
     if (query.fromDate) {
       const fromDateStr = query.fromDate.split("T")[0];
-      const start = getUTCFromNYTime(`${fromDateStr}T00:00:00.000`, offsetMs);
+      const start = getUTCFromLocalTime(`${fromDateStr}T00:00:00.000`, timeZone);
       dateFilter.gte = start;
     }
 
     if (query.toDate) {
       const toDateStr = query.toDate.split("T")[0];
-      const end = getUTCFromNYTime(`${toDateStr}T23:59:59.999`, offsetMs);
+      const end = getUTCFromLocalTime(`${toDateStr}T23:59:59.999`, timeZone);
       dateFilter.lte = end;
     }
 
@@ -160,7 +174,8 @@ export const getJournalOrderBy = (
 
 export const buildJournalWhereFilter = (
   query: TJournalQuery,
-  userId?: string
+  userId?: string,
+  timeZone: string = "America/New_York"
 ): Prisma.JournalWhereInput => {
   const where: Prisma.JournalWhereInput = {};
 
@@ -228,7 +243,7 @@ export const buildJournalWhereFilter = (
     where.isFavorite = true;
   }
 
-  const createdAtFilter = getDateRangeFilter(query);
+  const createdAtFilter = getDateRangeFilter(query, timeZone);
 
   if (createdAtFilter) {
     where.createdAt = createdAtFilter;

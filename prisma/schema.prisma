@@ -212,7 +212,7 @@ model Reminder {
   monthlyLastDayEnabled Boolean @default(false)
   daysOfMonth    Int[]    // e.g. [1, 15, 30]
   daysOfWeek     String[] // e.g. ["MON", "WED", "FRI"]
-  time           String   @default("08:00") // e.g. "08:00"
+  time           String   @default("04:00") // e.g. "04:00"
   timeZone       String   @default("America/New_York") // e.g. "America/New_York"
 
   createdAt DateTime @default(now())

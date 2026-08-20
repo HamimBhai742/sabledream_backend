@@ -10,6 +10,7 @@ import {
   buildJournalWhereFilter,
   getJournalOrderBy,
   getPagination,
+  getUTCFromLocalTime,
 } from "../../helper/journal";
 import { TJournalQuery } from "../../interface/journal.interface";
 
@@ -80,10 +81,21 @@ const createJournal = async (
     imageKey = uploadedImage.public_id;
   }
 
+  const reminder = await prisma.reminder.findFirst({
+    where: {
+      userId,
+      type: "journal",
+    },
+    select: {
+      timeZone: true,
+    },
+  });
+  const timeZone = reminder?.timeZone || "America/New_York";
+
   const journal = await prisma.journal.create({
     data: {
       ...journalData,
-      createdAt: journalData.createdAt ? new Date(journalData.createdAt) : undefined,
+      createdAt: journalData.createdAt ? getUTCFromLocalTime(journalData.createdAt, timeZone) : undefined,
       userId,
       imageUrl,
       imageKey,
@@ -116,7 +128,18 @@ const createJournal = async (
 const getMyJournals = async (userId: string, query: TJournalQuery) => {
   const { page, limit, skip } = getPagination(query);
 
-  const where = buildJournalWhereFilter(query, userId);
+  const reminder = await prisma.reminder.findFirst({
+    where: {
+      userId,
+      type: "journal",
+    },
+    select: {
+      timeZone: true,
+    },
+  });
+  const timeZone = reminder?.timeZone || "America/New_York";
+
+  const where = buildJournalWhereFilter(query, userId, timeZone);
 
   const orderBy = getJournalOrderBy(query.sortBy);
 
@@ -268,13 +291,24 @@ const updateJournal = async (
     imageKey = uploadedImage.public_id;
   }
 
+  const reminder = await prisma.reminder.findFirst({
+    where: {
+      userId,
+      type: "journal",
+    },
+    select: {
+      timeZone: true,
+    },
+  });
+  const timeZone = reminder?.timeZone || "America/New_York";
+
   const updatedJournal = await prisma.journal.update({
     where: {
       id: journalId,
     },
     data: {
       ...journalData,
-      createdAt: journalData.createdAt ? new Date(journalData.createdAt) : undefined,
+      createdAt: journalData.createdAt ? getUTCFromLocalTime(journalData.createdAt, timeZone) : undefined,
       imageUrl,
       imageKey,
       categoryIds: categoryIds ?? existingJournal.categoryIds,

@@ -38,7 +38,7 @@ const getReminderSettings = async (userId: string) => {
       monthlyLastDayEnabled: false,
       daysOfMonth: [],
       daysOfWeek: [],
-      time: "08:00",
+      time: "04:00",
       timeZone: defaultTimeZone,
     }));
 
@@ -163,7 +163,7 @@ const updateReminderSettings = async (
       monthlyLastDayEnabled: data.monthlyLastDayEnabled ?? false,
       daysOfMonth: data.daysOfMonth ?? [],
       daysOfWeek: data.daysOfWeek ?? [],
-      time: data.time ?? "08:00",
+      time: data.time ?? "04:00",
       timeZone: data.timeZone ?? defaultTimeZone,
     },
   });
