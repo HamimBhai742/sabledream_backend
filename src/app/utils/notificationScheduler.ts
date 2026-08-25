@@ -81,23 +81,25 @@ export const startNotificationScheduler = () => {
       const reminders = await prisma.reminder.findMany({
         where: {
           enabled: true,
-          user: {
-            fcmToken: {
-              not: null,
-            },
-          },
-        },
-        include: {
-          user: true,
         },
       });
 
       for (const reminder of reminders) {
-        if (!reminder.user.fcmToken) continue;
-
-        const fcmToken = reminder.user.fcmToken;
         const localParts = getReminderLocalParts(now, reminder.timeZone || defaultTimeZone);
         if (!localParts || localParts.time !== reminder.time) continue;
+
+        const user = await prisma.user.findUnique({
+          where: { id: reminder.userId },
+        });
+
+        if (!user) {
+          // Auto cleanup of orphaned reminders
+          await prisma.reminder.delete({ where: { id: reminder.id } }).catch(() => {});
+          continue;
+        }
+
+        if (!user.fcmToken) continue;
+        const fcmToken = user.fcmToken;
 
         const monthlyDue =
           reminder.daysOfMonth.includes(localParts.dayOfMonth) ||

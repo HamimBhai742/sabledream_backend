@@ -1,17 +1,20 @@
 import sendEmail from "../sendEmail";
 
-interface WelcomeSableDreamData {
+interface SubscriptionDetailsData {
   userName: string;
   email: string;
+  planName: string;
+  price: string;
+  renewsAt: string;
   joinedAt: string;
 }
 
-export const welcomeSableDreamTemplate = async (
-  data: WelcomeSableDreamData,
+export const subscriptionDetailsTemplate = async (
+  data: SubscriptionDetailsData,
 ) => {
-  const { userName, email, joinedAt } = data;
+  const { userName, email, planName, price, renewsAt, joinedAt } = data;
 
-  const subject = "🌸 Welcome to Sable Dreams — You're In!";
+  const subject = "💕 Your Sable Dreams Subscription Is Confirmed";
 
   const html = `
 <!DOCTYPE html>
@@ -19,7 +22,7 @@ export const welcomeSableDreamTemplate = async (
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Welcome to Sable Dreams</title>
+<title>Subscription Confirmed</title>
 <style>
   /* Reset */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -89,7 +92,7 @@ export const welcomeSableDreamTemplate = async (
   .hero-title {
     font-family: Georgia, serif;
     font-style: italic;
-    font-size: 38px;
+    font-size: 34px;
     font-weight: 400;
     color: #6b1a3a;
     line-height: 1.15;
@@ -149,7 +152,7 @@ export const welcomeSableDreamTemplate = async (
     font-size: 22px;
     font-weight: 700;
     color: #1a1018;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
 
   .body-text {
@@ -157,7 +160,7 @@ export const welcomeSableDreamTemplate = async (
     font-size: 15px;
     line-height: 1.8;
     color: #3d2030;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
 
   .body-text strong { color: #c05880; font-weight: 700; }
@@ -169,15 +172,15 @@ export const welcomeSableDreamTemplate = async (
     margin: 28px 0;
   }
 
-  /* ── ACCOUNT DETAILS CARD ── */
-  .account-card {
+  /* ── DETAILS CARD ── */
+  .details-card {
     background: #fef8fb;
     border: 1.5px solid #f0d0e4;
     border-radius: 14px;
     padding: 24px;
     margin: 24px 0;
   }
-  .account-card-title {
+  .details-card-title {
     font-family: Arial, sans-serif;
     font-size: 10px;
     font-weight: 700;
@@ -187,29 +190,29 @@ export const welcomeSableDreamTemplate = async (
     text-align: center;
     margin-bottom: 18px;
   }
-  .account-card-title::before { content: '✦  '; }
-  .account-card-title::after  { content: '  ✦'; }
+  .details-card-title::before { content: '✦  '; }
+  .details-card-title::after  { content: '  ✦'; }
 
-  .account-table {
+  .details-table {
     width: 100%;
     border-collapse: collapse;
   }
-  .account-table tr {
+  .details-table tr {
     border-bottom: 1px solid #f0d0e4;
   }
-  .account-table tr:last-child { border-bottom: none; }
-  .account-table td {
+  .details-table tr:last-child { border-bottom: none; }
+  .details-table td {
     padding: 11px 12px;
     font-size: 13.5px;
     vertical-align: middle;
   }
-  .account-table td:first-child {
+  .details-table td:first-child {
     font-family: Arial, sans-serif;
     color: #9a6070;
     font-size: 12px;
     width: 38%;
   }
-  .account-table td:last-child {
+  .details-table td:last-child {
     font-family: Georgia, serif;
     color: #1a1018;
     font-weight: 400;
@@ -225,54 +228,14 @@ export const welcomeSableDreamTemplate = async (
     color: #2a7a4a;
   }
 
-  /* ── NEXT STEPS CARD ── */
-  .steps-card {
-    background: #fef8fb;
-    border: 1.5px solid #f0d0e4;
-    border-radius: 14px;
-    padding: 24px;
-    margin: 0 0 24px;
-  }
-  .steps-card-title {
-    font-family: Arial, sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    color: #c05880;
-    margin-bottom: 18px;
-  }
-  .steps-card-title::before { content: '🚀  '; }
-
-  .step-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-  .step-row:last-child { margin-bottom: 0; }
-  .step-num {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #e8a0c0, #c05880);
-    color: white;
-    font-family: Arial, sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-  .step-text {
+  .disclaimer-text {
     font-family: Georgia, serif;
-    font-size: 14px;
-    line-height: 1.65;
-    color: #3d2030;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #8c707d;
+    text-align: center;
+    margin-top: 14px;
   }
-  .step-text strong { color: #1a1018; }
 
   /* ── CTA SECTION ── */
   .cta-section {
@@ -417,29 +380,24 @@ export const welcomeSableDreamTemplate = async (
     <div class="hero-watermark" aria-hidden="true">
       <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
       <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
-      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
-      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
-      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
-      <span>sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp; sable dreams &nbsp;✦&nbsp; dream boldly &nbsp;✦&nbsp; live softly &nbsp;✦&nbsp; dream &nbsp;✦&nbsp; believe &nbsp;✦&nbsp; become &nbsp;✦&nbsp;</span>
     </div>
 
     <div class="hero-content">
 
-      <!-- Wax Seal SVG -->
       <!-- Wax Seal Stamp -->
-      <div class="wax-seal" style="margin-bottom: 18px;">
+      <div class="wax-seal">
         <img src="https://imglink.cc/cdn/K5i74ZtPzJ.png" alt="Sable Dreams Logo" width="72" height="72" style="display: block; margin: 0 auto; border: none; outline: none; text-decoration: none;" />
       </div>
 
       <!-- Title -->
-      <div class="hero-title">Welcome to Sable Dreams</div>
-      <div class="hero-subtitle">A beautiful space for the woman you are becoming. 🪞</div>
-      <div class="hero-tagline">WELCOME, SABLE DREAMER ✦</div>
+      <div class="hero-title">Your Sable Dreams Subscription Is Confirmed</div>
+      <div class="hero-subtitle">Everything is ready for you. 🌷</div>
+      <div class="hero-tagline">SUBSCRIPTION CONFIRMED ✦</div>
     </div>
 
     <!-- Banner strip -->
     <div class="hero-banner">
-      <p>✨ &nbsp; YOUR SPACE TO DREAM, BELIEVE & BECOME</p>
+      <p>✨ &nbsp; YOU’RE ALL SET</p>
     </div>
   </div>
 
@@ -454,83 +412,71 @@ export const welcomeSableDreamTemplate = async (
       <div class="greeting">Hello, ${userName || 'Sable Dreamer'}! 💕</div>
 
       <p class="body-text">
-        You’re here. And something beautiful is beginning.
+        Your Sable Dreams subscription is active and your account is ready.
       </p>
       <p class="body-text">
-        Welcome to Sable Dreams. 💕
+        Everything is set for you to begin exploring Sable Dreams — your space for reflection, affirmation, dreaming, and becoming.
       </p>
       <p class="body-text">
-        You didn’t just subscribe to a journaling app. You made a decision to create space for yourself—for your thoughts, your dreams, your healing, your desires, and the woman you are becoming.
-      </p>
-      <p class="body-text" style="margin-bottom: 16px;">
-        There is so much ahead of you:
+        Below are the details of your subscription for your records.
       </p>
 
-      <!-- Styled Bullet List -->
-      <ul style="list-style: none; padding-left: 0; margin: 18px 0 24px;">
-        <li style="font-family: Georgia, serif; font-size: 15px; line-height: 1.8; color: #3d2030; margin-bottom: 12px; padding-left: 28px; position: relative;">
-          <span style="position: absolute; left: 4px; color: #c05880;">✨</span>
-          New dreams you haven’t dreamed yet.
-        </li>
-        <li style="font-family: Georgia, serif; font-size: 15px; line-height: 1.8; color: #3d2030; margin-bottom: 12px; padding-left: 28px; position: relative;">
-          <span style="position: absolute; left: 4px; color: #c05880;">✦</span>
-          New things you’ll learn about yourself.
-        </li>
-        <li style="font-family: Georgia, serif; font-size: 15px; line-height: 1.8; color: #3d2030; margin-bottom: 12px; padding-left: 28px; position: relative;">
-          <span style="position: absolute; left: 4px; color: #c05880;">✦</span>
-          New ways you’ll choose yourself.
-        </li>
-        <li style="font-family: Georgia, serif; font-size: 15px; line-height: 1.8; color: #3d2030; margin-bottom: 12px; padding-left: 28px; position: relative;">
-          <span style="position: absolute; left: 4px; color: #c05880;">✦</span>
-          New possibilities you’ll finally allow yourself to believe in.
-        </li>
-      </ul>
+      <div class="divider"></div>
 
-      <p class="body-text">
-        Some days, becoming will look like dreaming bigger.
-      </p>
-      <p class="body-text">
-        Other days, it will look like slowing down and giving yourself permission to simply be.
-      </p>
-      <p class="body-text">
-        There is room for all of it here.
-      </p>
-      <p class="body-text">
-        Sable Dreams was created to be a beautiful place you can return to each day to reflect, write, imagine, believe, and become.
-      </p>
-      <p class="body-text">
-        So take your time.
-      </p>
-      <p class="body-text">
-        Pour the coffee. Light the candle. Get comfortable.
-      </p>
-      <p class="body-text">
-        Your next chapter doesn’t have to happen all at once.
-      </p>
-      <p class="body-text">
-        I can’t wait to meet you here, one day at a time.
-      </p>
-      <p class="body-text">
-        Welcome to Sable Dreams. I’m so happy you’re here. 🤎
-      </p>
-      <p class="body-text" style="font-style: italic; font-weight: bold; margin-bottom: 24px;">
-        Dream boldly. Live softly.
-      </p>
+      <!-- Subscription Card -->
+      <div class="details-card">
+        <div class="details-card-title">YOUR SUBSCRIPTION</div>
+        <table class="details-table">
+          <tr>
+            <td>Subscription Status</td>
+            <td><span class="status-active">✅ Active</span></td>
+          </tr>
+          <tr>
+            <td>Plan</td>
+            <td><strong>${planName}</strong></td>
+          </tr>
+          <tr>
+            <td>Price</td>
+            <td><strong>${price}</strong></td>
+          </tr>
+          <tr>
+            <td>Renews</td>
+            <td><strong>${renewsAt}</strong></td>
+          </tr>
+          <tr>
+            <td>Account Email</td>
+            <td><a href="mailto:${email}" style="color:#c05880;text-decoration:none;">${email}</a></td>
+          </tr>
+        </table>
+        <p class="disclaimer-text">
+          Your subscription will automatically renew unless canceled through your Apple App Store or Google Play subscription settings.
+        </p>
+      </div>
 
-      <!-- Signature Block -->
-      <div style="margin-top: 28px; margin-bottom: 36px; padding-left: 4px;">
-        <div style="font-family: Georgia, serif; font-style: italic; font-size: 20px; color: #6b1a3a; margin-bottom: 2px;">Tameka</div>
-        <div style="font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #a25272; margin-bottom: 4px;">Founder, Sable Dreams</div>
-        <div style="font-family: Arial, sans-serif; font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #c05880;">DREAM. BELIEVE. BECOME.</div>
+      <div class="divider"></div>
+
+      <!-- Account Card -->
+      <div class="details-card">
+        <div class="details-card-title">YOUR ACCOUNT</div>
+        <table class="details-table">
+          <tr>
+            <td>Account Status</td>
+            <td><span class="status-active">✅ Active</span></td>
+          </tr>
+          <tr>
+            <td>Member Since</td>
+            <td><strong>${joinedAt}</strong></td>
+          </tr>
+        </table>
       </div>
 
       <div class="divider"></div>
 
       <!-- Stay Connected -->
-      <div class="steps-card" style="margin-bottom: 28px;">
-        <div class="steps-card-title" style="letter-spacing: 2px;">STAY CONNECTED 💕</div>
+      <div class="details-card" style="margin-bottom: 28px; background: #ffffff;">
+        <div class="details-card-title" style="letter-spacing: 2px;">STAY CONNECTED 💕</div>
         <p class="body-text" style="font-size: 14px; line-height: 1.65; margin-bottom: 20px;">
-          Come find Sable Dreams beyond the app. Follow <strong>@thesabledreamer</strong> for reflections, inspiration, behind-the-scenes moments, and more from the Sable Dreams community.
+          Follow <strong>@thesabledreamer</strong> for reflections, inspiration, Sable Dreams updates, and a little softness for your day.
         </p>
         
         <!-- Social Links Table -->
@@ -571,13 +517,24 @@ export const welcomeSableDreamTemplate = async (
   </div>
 
   <!-- ════════════════════════════════════════ -->
+  <!-- CTA SECTION                              -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="padded" style="padding-top:0; padding-bottom:0; background:#fff; position:relative; z-index:1;">
+    <div class="cta-section">
+      <div class="cta-title">EVERYTHING IS READY 💕</div>
+      <div class="cta-sub">Open Sable Dreams whenever you’re ready.</div>
+      <a href="${process.env.CLIENT_URL || '#'}" class="cta-button">OPEN SABLE DREAMS ✨</a>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
   <!-- SUPPORT SECTION                          -->
   <!-- ════════════════════════════════════════ -->
   <div class="padded" style="background:#fff; padding-top:0; padding-bottom:32px; position:relative; z-index:1;">
     <div class="support-section">
       <div class="support-title">NEED A LITTLE HELP?</div>
       <p class="support-text">
-        Have a question about your Sable Dreams account or experience?<br>
+        If you have questions about your Sable Dreams account or subscription, we’re here to help.<br>
         Email: <a href="mailto:sdsupport@sabledreams.com">sdsupport@sabledreams.com</a>
       </p>
     </div>
@@ -599,7 +556,7 @@ export const welcomeSableDreamTemplate = async (
     <div class="footer-tagline">Dream. Believe. Become.</div>
 
     <p class="footer-body">
-      You’re receiving this email because you created a Sable Dreams account.
+      You’re receiving this email because you subscribed to Sable Dreams.
     </p>
 
     <div class="footer-links">
@@ -607,7 +564,7 @@ export const welcomeSableDreamTemplate = async (
       <a href="#">Terms of Service</a>
     </div>
 
-    <div class="footer-copy">© 2026 Sable Dreams</div>
+    <div class="footer-copy">© 2026 Sable Dreams. Made with 🌸 for you.</div>
   </div>
 
 </div>

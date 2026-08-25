@@ -3,6 +3,7 @@ import config from "../../config";
 import AppError from "../../error/AppError";
 import httpStatus from "http-status";
 import { subscriptionConfirmationTemplate } from "../../utils/emailTemplates/subscriptionConfirmation";
+import { subscriptionDetailsTemplate } from "../../utils/emailTemplates/subscriptionDetails";
 
 // Map Product ID to plan name, cost, and frequency
 const PRODUCT_PLAN_MAP: Record<string, { name: string; type: "monthly" | "annual"; amount: number }> = {
@@ -404,6 +405,19 @@ export const SubscriptionService = {
         });
       } catch (err) {
         console.error("[RevenueCat Webhook] Failed to send subscription confirmation email:", err);
+      }
+
+      try {
+        await subscriptionDetailsTemplate({
+          userName: user.name,
+          email: user.email,
+          planName: planMeta?.name || "Premium Plan",
+          price: event.price !== undefined ? `$${event.price}` : `$${planMeta?.amount || 5.0}`,
+          renewsAt: expiresDate ? expiresDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A",
+          joinedAt: user.createdAt ? user.createdAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+        });
+      } catch (err) {
+        console.error("[RevenueCat Webhook] Failed to send subscription details email:", err);
       }
     }
 
