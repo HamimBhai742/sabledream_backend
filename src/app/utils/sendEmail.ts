@@ -2,12 +2,15 @@ import nodemailer from "nodemailer";
 import httpStatus from "http-status";
 import AppError from "../error/AppError";
 
-const sendEmail = async (to: string, subject: string, html: string,text?: string) => {
+const sendEmail = async (to: string, subject: string, html: string, text?: string) => {
   try {
+    const port = Number(process.env.SMTP_PORT) || 587;
+
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: process.env.SMTP_PORT === "465", // true for 465, false for other ports
+      host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
+      port,
+      // Port 465 = SSL (secure: true), Port 587 = STARTTLS (secure: false)
+      secure: port === 465,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -15,7 +18,7 @@ const sendEmail = async (to: string, subject: string, html: string,text?: string
     });
 
     const info = await transporter.sendMail({
-      from: `"${process.env.SMTP_FROM_NAME || 'Sable Dreams'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
+      from: `"${process.env.SMTP_FROM_NAME || "Sable Dreams"}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
       to,
       subject,
       text,
@@ -33,3 +36,4 @@ const sendEmail = async (to: string, subject: string, html: string,text?: string
 };
 
 export default sendEmail;
+
