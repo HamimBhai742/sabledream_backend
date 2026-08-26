@@ -18,4 +18,8 @@ export type TJournalQuery = {
   dateRange?: "today" | "thisWeek" | "thisMonth" | "allTime";
 
   sortBy?: "newest" | "oldest" | "monthHighest";
+
+  // Client should send their IANA device timezone (e.g. "Asia/Dhaka", "America/New_York")
+  // This ensures date range filters work correctly in the user's local timezone
+  timeZone?: string;
 };

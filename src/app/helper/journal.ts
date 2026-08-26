@@ -175,7 +175,7 @@ export const getJournalOrderBy = (
 export const buildJournalWhereFilter = (
   query: TJournalQuery,
   userId?: string,
-  timeZone: string = "America/New_York"
+  timeZone: string = "UTC"
 ): Prisma.JournalWhereInput => {
   const where: Prisma.JournalWhereInput = {};
 
@@ -190,29 +190,60 @@ export const buildJournalWhereFilter = (
         ? false
         : false;
 
+  // --- Mood filter (explicit filter by mood, comma-separated or single) ---
+  const moods = [
+    ...parseCommaSeparatedValues(query.moods),
+    ...(query.mood ? [query.mood] : []),
+  ];
+
+  if (moods.length) {
+    where.mood = {
+      in: moods.map((m) => m.toUpperCase()) as any,
+    };
+  }
+
+  // --- Text search across title, prompt, content, and mood ---
   if (query.search) {
-    where.OR = [
+    const searchTerm = query.search.trim();
+
+    // Check if the search term matches any known mood value (case-insensitive)
+    const validMoods = ["HAPPY", "SAD", "CALM", "GRATEFUL", "ANXIOUS", "EXCITED", "NEUTRAL"];
+    const matchedMood = validMoods.find(
+      (m) => m === searchTerm.toUpperCase()
+    );
+
+    const searchClauses: Prisma.JournalWhereInput[] = [
       {
         title: {
-          contains: query.search,
+          contains: searchTerm,
           mode: "insensitive",
         },
       },
       {
         prompt: {
-          contains: query.search,
+          contains: searchTerm,
           mode: "insensitive",
         },
       },
       {
         content: {
-          contains: query.search,
+          contains: searchTerm,
           mode: "insensitive",
         },
       },
     ];
+
+    // If search term matches a mood, also search by mood field
+    if (matchedMood) {
+      searchClauses.push({
+        mood: matchedMood as any,
+      });
+    }
+
+    where.OR = searchClauses;
   }
 
+  // --- Category filter ---
   const categoryIds = [
     ...parseCommaSeparatedValues(query.categoryIds),
     ...(query.categoryId ? [query.categoryId] : []),
@@ -221,17 +252,6 @@ export const buildJournalWhereFilter = (
   if (categoryIds.length) {
     where.categoryIds = {
       hasSome: categoryIds,
-    };
-  }
-
-  const moods = [
-    ...parseCommaSeparatedValues(query.moods),
-    ...(query.mood ? [query.mood] : []),
-  ];
-
-  if (moods.length) {
-    where.mood = {
-      in: moods as any,
     };
   }
 

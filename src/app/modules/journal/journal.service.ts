@@ -48,7 +48,8 @@ const createJournal = async (
   file?: Express.Multer.File,
 ) => {
   const data = typeof payload.data === "string" ? JSON.parse(payload.data) : payload;
-  const { categoryIds = [], ...journalData } = data;
+  // Extract timeZone from payload — client should send their device timezone
+  const { categoryIds = [], timeZone: clientTimeZone, ...journalData } = data;
 
   if (categoryIds.length) {
     const categories = await prisma.journalCategory.findMany({
@@ -81,21 +82,37 @@ const createJournal = async (
     imageKey = uploadedImage.public_id;
   }
 
-  const reminder = await prisma.reminder.findFirst({
-    where: {
-      userId,
-      type: "journal",
-    },
-    select: {
-      timeZone: true,
-    },
-  });
-  const timeZone = reminder?.timeZone || "America/New_York";
+  // Priority: client-provided timeZone > reminder timeZone > UTC (no conversion)
+  let timeZone: string | null = clientTimeZone || null;
+
+  if (!timeZone) {
+    const reminder = await prisma.reminder.findFirst({
+      where: {
+        userId,
+        type: "journal",
+      },
+      select: {
+        timeZone: true,
+      },
+    });
+    timeZone = reminder?.timeZone || null;
+  }
+
+  // Resolve createdAt: convert local time to UTC only if timezone is known
+  let resolvedCreatedAt: Date | undefined = undefined;
+  if (journalData.createdAt) {
+    if (timeZone) {
+      resolvedCreatedAt = getUTCFromLocalTime(journalData.createdAt, timeZone);
+    } else {
+      // No timezone available — treat as UTC directly to avoid wrong conversion
+      resolvedCreatedAt = new Date(journalData.createdAt);
+    }
+  }
 
   const journal = await prisma.journal.create({
     data: {
       ...journalData,
-      createdAt: journalData.createdAt ? getUTCFromLocalTime(journalData.createdAt, timeZone) : undefined,
+      createdAt: resolvedCreatedAt,
       userId,
       imageUrl,
       imageKey,
@@ -128,16 +145,21 @@ const createJournal = async (
 const getMyJournals = async (userId: string, query: TJournalQuery) => {
   const { page, limit, skip } = getPagination(query);
 
-  const reminder = await prisma.reminder.findFirst({
-    where: {
-      userId,
-      type: "journal",
-    },
-    select: {
-      timeZone: true,
-    },
-  });
-  const timeZone = reminder?.timeZone || "America/New_York";
+  // Priority: client-provided timeZone > reminder timeZone > UTC fallback
+  let timeZone: string = query.timeZone || "";
+
+  if (!timeZone) {
+    const reminder = await prisma.reminder.findFirst({
+      where: {
+        userId,
+        type: "journal",
+      },
+      select: {
+        timeZone: true,
+      },
+    });
+    timeZone = reminder?.timeZone || "UTC";
+  }
 
   const where = buildJournalWhereFilter(query, userId, timeZone);
 
@@ -254,7 +276,8 @@ const updateJournal = async (
   }
 
   const data = typeof payload.data === "string" ? JSON.parse(payload.data) : payload;
-  const { categoryIds, ...journalData } = data;
+  // Extract timeZone from payload — client should send their device timezone
+  const { categoryIds, timeZone: clientTimeZone, ...journalData } = data;
 
   if (categoryIds?.length) {
     const categories = await prisma.journalCategory.findMany({
@@ -291,16 +314,32 @@ const updateJournal = async (
     imageKey = uploadedImage.public_id;
   }
 
-  const reminder = await prisma.reminder.findFirst({
-    where: {
-      userId,
-      type: "journal",
-    },
-    select: {
-      timeZone: true,
-    },
-  });
-  const timeZone = reminder?.timeZone || "America/New_York";
+  // Priority: client-provided timeZone > reminder timeZone > UTC (no conversion)
+  let timeZone: string | null = clientTimeZone || null;
+
+  if (!timeZone) {
+    const reminder = await prisma.reminder.findFirst({
+      where: {
+        userId,
+        type: "journal",
+      },
+      select: {
+        timeZone: true,
+      },
+    });
+    timeZone = reminder?.timeZone || null;
+  }
+
+  // Resolve createdAt: convert local time to UTC only if timezone is known
+  let resolvedCreatedAt: Date | undefined = undefined;
+  if (journalData.createdAt) {
+    if (timeZone) {
+      resolvedCreatedAt = getUTCFromLocalTime(journalData.createdAt, timeZone);
+    } else {
+      // No timezone available — treat as UTC directly to avoid wrong conversion
+      resolvedCreatedAt = new Date(journalData.createdAt);
+    }
+  }
 
   const updatedJournal = await prisma.journal.update({
     where: {
@@ -308,7 +347,7 @@ const updateJournal = async (
     },
     data: {
       ...journalData,
-      createdAt: journalData.createdAt ? getUTCFromLocalTime(journalData.createdAt, timeZone) : undefined,
+      createdAt: resolvedCreatedAt,
       imageUrl,
       imageKey,
       categoryIds: categoryIds ?? existingJournal.categoryIds,
