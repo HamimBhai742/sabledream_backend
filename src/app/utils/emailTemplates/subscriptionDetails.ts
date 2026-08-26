@@ -523,7 +523,7 @@ export const subscriptionDetailsTemplate = async (
     <div class="cta-section">
       <div class="cta-title">EVERYTHING IS READY 💕</div>
       <div class="cta-sub">Open Sable Dreams whenever you’re ready.</div>
-      <a href="${process.env.CLIENT_URL || '#'}" class="cta-button">OPEN SABLE DREAMS ✨</a>
+      <a href="${process.env.APP_DEEP_LINK || 'sabledream://'}" class="cta-button">OPEN SABLE DREAMS ✨</a>
     </div>
   </div>
 

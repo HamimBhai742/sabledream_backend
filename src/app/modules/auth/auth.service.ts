@@ -331,6 +331,26 @@ const googleLoginService = async (idToken: string) => {
         monthlyTokenLimit: defaultLimit,
       },
     });
+
+    // Send welcome email to new Google sign-up
+    try {
+      await welcomeSableDreamTemplate({
+        userName: user.name,
+        email: user.email,
+        joinedAt: new Date().toLocaleString("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "long",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        }),
+      });
+    } catch (emailError) {
+      console.error("[Email] Failed to send welcome email to new Google user:", emailError);
+    }
   } else {
     const permanentId = await ensurePermanentUserId(user.id, user.permanentId);
     user = await prisma.user.update({
@@ -413,6 +433,26 @@ const appleLoginService = async (
         monthlyTokenLimit: defaultLimit,
       },
     });
+
+    // Send welcome email to new Apple sign-up
+    try {
+      await welcomeSableDreamTemplate({
+        userName: user.name,
+        email: user.email,
+        joinedAt: new Date().toLocaleString("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "long",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        }),
+      });
+    } catch (emailError) {
+      console.error("[Email] Failed to send welcome email to new Apple user:", emailError);
+    }
   } else {
     const permanentId = await ensurePermanentUserId(user.id, user.permanentId);
     user = await prisma.user.update({

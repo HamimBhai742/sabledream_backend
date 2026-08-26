@@ -16,6 +16,14 @@ export const sendPushNotification = async (
       },
       token: fcmToken,
       data: data || {},
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
     };
 
     let response = null;

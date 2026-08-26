@@ -16,8 +16,9 @@ const startServer = async () => {
     await seedAdminFunction();
     server.listen(PORT, () => {
       // Start the scheduled push notification checker
+      console.log(`Server is running on port ${PORT} on environment ${config.nodeEnv}`);
       startNotificationScheduler();
-    });
+    }); 
   } catch (error) {
     console.error("Failed to start the server:", error);
     process.exit(1);

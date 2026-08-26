@@ -2,18 +2,18 @@ import httpStatus from "http-status";
 import AppError from "../../error/AppError";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
-import { AknChatMessageResponse } from "./chat.types";
+import { SableDreamChatMessageResponse } from "./chat.types";
 import { sendPushNotification } from "../../utils/sendNotification";
 import { ensurePermanentUserId } from "../../utils/generatePermanentUserId";
 
 const withTrailingSlash = (value: string) => (value.endsWith("/") ? value : `${value}/`);
 
 const buildUrl = (path: string) => {
-  const baseUrl = config.aknChat?.baseUrl;
+  const baseUrl = config.sableDreamChat?.baseUrl;
   if (!baseUrl) {
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "AKN chat base URL is not configured (AKN_CHAT_BASE_URL)"
+      "Sable Dream chat base URL is not configured (SABLE_DREAM_CHAT_BASE_URL)"
     );
   }
   return new URL(path.replace(/^\//, ""), withTrailingSlash(baseUrl)).toString();
@@ -31,11 +31,11 @@ const parseErrorBody = async (response: Response) => {
   }
 };
 
-const requestAknChat = async <T>(path: string, init: RequestInit, timeoutMs?: number): Promise<T> => {
+const requestSableDreamChat = async <T>(path: string, init: RequestInit, timeoutMs?: number): Promise<T> => {
   const url = buildUrl(path);
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs ?? config.aknChat.timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs ?? config.sableDreamChat.timeoutMs);
 
   try {
     const headers: Record<string, string> = {
@@ -43,7 +43,7 @@ const requestAknChat = async <T>(path: string, init: RequestInit, timeoutMs?: nu
       ...(init.headers as Record<string, string> | undefined),
     };
 
-    const apiKey = config.aknChat.apiKey;
+    const apiKey = config.sableDreamChat.apiKey;
     if (apiKey) {
       headers.Authorization = apiKey.startsWith("Bearer ") ? apiKey : `Bearer ${apiKey}`;
     }
@@ -65,7 +65,7 @@ const requestAknChat = async <T>(path: string, init: RequestInit, timeoutMs?: nu
 
       throw new AppError(
         httpStatus.BAD_GATEWAY,
-        `AKN chat service error (${response.status})${details ? `: ${details}` : ""}`
+        `Sable Dream chat service error (${response.status})${details ? `: ${details}` : ""}`
       );
     }
 
@@ -75,9 +75,9 @@ const requestAknChat = async <T>(path: string, init: RequestInit, timeoutMs?: nu
       throw err;
     }
     if (err?.name === "AbortError") {
-      throw new AppError(httpStatus.GATEWAY_TIMEOUT, "AKN chat service request timed out");
+      throw new AppError(httpStatus.GATEWAY_TIMEOUT, "Sable Dream chat service request timed out");
     }
-    throw new AppError(httpStatus.BAD_GATEWAY, "Failed to reach AKN chat service");
+    throw new AppError(httpStatus.BAD_GATEWAY, "Failed to reach Sable Dream chat service");
   } finally {
     clearTimeout(timeout);
   }
@@ -133,14 +133,14 @@ export const ChatService = {
       );
     }
 
-    const result = await requestAknChat<AknChatMessageResponse>(
+    const result = await requestSableDreamChat<SableDreamChatMessageResponse>(
       "/api/v1/chat/message",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, message }),
       },
-      config.aknChat.timeoutMs
+      config.sableDreamChat.timeoutMs
     );
 
     // Increment message count for this month
@@ -174,15 +174,15 @@ export const ChatService = {
   },
 
   async getHistory(userId: string) {
-    return requestAknChat<any>(`/api/v1/chat/history/${encodeURIComponent(userId)}`, { method: "GET" });
+    return requestSableDreamChat<any>(`/api/v1/chat/history/${encodeURIComponent(userId)}`, { method: "GET" });
   },
 
   async deleteHistory(userId: string) {
-    return requestAknChat<any>(`/api/v1/chat/history/${encodeURIComponent(userId)}`, { method: "DELETE" });
+    return requestSableDreamChat<any>(`/api/v1/chat/history/${encodeURIComponent(userId)}`, { method: "DELETE" });
   },
 
   async getMemory(userId: string) {
-    return requestAknChat<any>(`/api/v1/chat/memory/${encodeURIComponent(userId)}`, { method: "GET" });
+    return requestSableDreamChat<any>(`/api/v1/chat/memory/${encodeURIComponent(userId)}`, { method: "GET" });
   },
 
   async getUsage(userId: string, monthYear?: string) {
@@ -192,7 +192,7 @@ export const ChatService = {
     // Sync usage data with live proxy first if it is the current month
     if (targetMonth === currentMonth) {
       try {
-        const rawUsage = await requestAknChat<any>(`/api/v1/chat/usage/${encodeURIComponent(userId)}`, { method: "GET" });
+        const rawUsage = await requestSableDreamChat<any>(`/api/v1/chat/usage/${encodeURIComponent(userId)}`, { method: "GET" });
         if (rawUsage) {
           await this.syncUserUsage(userId, rawUsage);
         }
