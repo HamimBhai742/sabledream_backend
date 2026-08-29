@@ -3,7 +3,7 @@ import httpStatus from "http-status";
 import AppError from "../../error/AppError";
 import { JournalService } from "../journal/journal.service";
 import { TJournalQuery } from "../../interface/journal.interface";
-import { deleteFromCloudinary } from "../../utils/uploadCloudinary";
+import { deleteFromImageKit } from "../../utils/uploadImageKit";
 import { ensurePermanentUserId } from "../../utils/generatePermanentUserId";
 import { TIME_OF_DAY_BUCKETS, TARGET_TIMEZONE } from "../../config/activityMetrics.config";
 
@@ -74,23 +74,18 @@ const parseDateOrUndefined = (value?: string) => {
   return date;
 };
 
-const getProfileImagePublicId = (image?: string | null) => {
-  if (!image?.includes("cloudinary.com")) return null;
-
-  const parts = image.split("/");
-  const filename = parts[parts.length - 1];
-  const publicId = filename?.split(".")[0];
-
-  return publicId ? `profile_pictures/${publicId}` : null;
+const getProfileImageFileOrUrl = (image?: string | null) => {
+  if (!image?.includes("imagekit.io")) return null;
+  return image;
 };
 
-const deleteCloudinaryAsset = async (publicId?: string | null) => {
-  if (!publicId) return;
+const deleteImageKitAsset = async (fileIdOrUrl?: string | null) => {
+  if (!fileIdOrUrl) return;
 
   try {
-    await deleteFromCloudinary(publicId);
+    await deleteFromImageKit(fileIdOrUrl);
   } catch (error) {
-    console.error(`Failed to delete Cloudinary asset ${publicId}:`, error);
+    console.error(`Failed to delete ImageKit asset ${fileIdOrUrl}:`, error);
   }
 };
 
@@ -413,10 +408,10 @@ export const AdminService = {
     }
 
     await Promise.all([
-      deleteCloudinaryAsset(getProfileImagePublicId(user.image)),
-      ...user.journals.map((journal) => deleteCloudinaryAsset(journal.imageKey)),
+      deleteImageKitAsset(getProfileImageFileOrUrl(user.image)),
+      ...user.journals.map((journal) => deleteImageKitAsset(journal.imageKey)),
       ...user.manifestations.map((manifestation) =>
-        deleteCloudinaryAsset(manifestation.imageKey),
+        deleteImageKitAsset(manifestation.imageKey),
       ),
     ]);
 
@@ -452,7 +447,7 @@ export const AdminService = {
       throw new AppError(httpStatus.NOT_FOUND, "Journal not found");
     }
 
-    await deleteCloudinaryAsset(journal.imageKey);
+    await deleteImageKitAsset(journal.imageKey);
 
     await prisma.$transaction(async (tx) => {
       for (const categoryId of journal.categoryIds) {
@@ -494,7 +489,7 @@ export const AdminService = {
       throw new AppError(httpStatus.NOT_FOUND, "Manifestation not found");
     }
 
-    await deleteCloudinaryAsset(manifestation.imageKey);
+    await deleteImageKitAsset(manifestation.imageKey);
 
     await prisma.manifestation.delete({
       where: {

@@ -1,14 +1,14 @@
 import { prisma } from '../../lib/prisma';
-import { deleteFromCloudinary, uploadBufferToCloudinary } from '../../utils/uploadCloudinary';
+import { deleteFromImageKit, uploadBufferToImageKit } from '../../utils/uploadImageKit';
 
 const createManifestation = async (userId: string, data: any, file?: Express.Multer.File) => {
   let imageUrl = null;
   let imageKey = null;
 
   if (file) {
-    const uploadedImage = await uploadBufferToCloudinary(file.buffer, 'manifestations');
-    imageUrl = uploadedImage?.secure_url;
-    imageKey = uploadedImage?.public_id;
+    const uploadedImage = await uploadBufferToImageKit(file.buffer, 'manifestations');
+    imageUrl = uploadedImage?.url;
+    imageKey = uploadedImage?.fileId;
   }
 
   const manifestationData = typeof data.data === 'string' ? JSON.parse(data.data) : data;
@@ -61,11 +61,11 @@ const updateManifestation = async (userId: string, manifestationId: string, data
 
   if (file) {
     if (existingManifestation.imageKey) {
-      await deleteFromCloudinary(existingManifestation.imageKey);
+      await deleteFromImageKit(existingManifestation.imageKey);
     }
-    const uploadedImage = await uploadBufferToCloudinary(file.buffer, 'manifestations');
-    imageUrl = uploadedImage.secure_url;
-    imageKey = uploadedImage.public_id;
+    const uploadedImage = await uploadBufferToImageKit(file.buffer, 'manifestations');
+    imageUrl = uploadedImage.url || null;
+    imageKey = uploadedImage.fileId || null;
   }
 
   const manifestationData = typeof data.data === 'string' ? JSON.parse(data.data) : data;
@@ -103,7 +103,7 @@ const deleteManifestation = async (userId: string, manifestationId: string) => {
   });
 
   if (existingManifestation?.imageKey) {
-    await deleteFromCloudinary(existingManifestation.imageKey);
+    await deleteFromImageKit(existingManifestation.imageKey);
   }
 
   return await prisma.manifestation.delete({

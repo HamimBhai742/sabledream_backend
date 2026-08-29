@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import AppError from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import bcrypt from "bcryptjs";
-import { deleteFromCloudinary, uploadBufferToCloudinary } from "../../utils/uploadCloudinary";
+import { deleteFromImageKit, uploadBufferToImageKit } from "../../utils/uploadImageKit";
 import { changePasswordSuccessTemplate } from "../../utils/emailTemplates/changePasswordSuccess";
 import { getDeviceInfo } from "../../utils/deviceParser";
 import { deleteAccountPermanentTemplate } from "../../utils/emailTemplates/deleteAccount";
@@ -41,24 +41,22 @@ const updateProfile = async (
 
   // Handle profile image upload
   if (file) {
-    // If the user already had an uploaded image on Cloudinary, delete it first
-    // Cloudinary public_ids are usually returned as part of the image URL or stored.
-    // Since we only store the secure_url in `image`, let's try to extract the public_id from it
-    if (user.image && user.image.includes("cloudinary.com")) {
-      try {
-        const parts = user.image.split("/");
-        const filename = parts[parts.length - 1];
-        const publicId = filename.split(".")[0];
-        // Clean up the old image
-        await deleteFromCloudinary(`profile_pictures/${publicId}`);
-      } catch (err) {
-        console.error("Failed to delete old profile image:", err);
+    // If the user already had an uploaded image on ImageKit or Cloudinary, delete it first
+    if (user.image) {
+      if (user.image.includes("imagekit.io")) {
+        try {
+          await deleteFromImageKit(user.image);
+        } catch (err) {
+          console.error("Failed to delete old ImageKit profile image:", err);
+        }
+      } else if (user.image.includes("cloudinary.com")) {
+        console.warn("Skipping deletion of old Cloudinary profile image (Cloudinary API removed).");
       }
     }
 
     // Upload new image
-    const uploadResult = await uploadBufferToCloudinary(file.buffer, "profile_pictures");
-    imageUrl = uploadResult.secure_url;
+    const uploadResult = await uploadBufferToImageKit(file.buffer, "profile_pictures");
+    imageUrl = uploadResult.url || null;
   }
 
   const updatedUser = await prisma.user.update({
@@ -198,34 +196,35 @@ const deleteAccount = async (
   const userName = user.name;
   const email = user.email;
 
-  // 1. Delete user's profile image from Cloudinary if it exists
-  if (user.image && user.image.includes("cloudinary.com")) {
-    try {
-      const parts = user.image.split("/");
-      const filename = parts[parts.length - 1];
-      const publicId = filename.split(".")[0];
-      await deleteFromCloudinary(`profile_pictures/${publicId}`);
-    } catch (err) {
-      console.error("Failed to delete user profile picture from Cloudinary:", err);
+  // 1. Delete user's profile image from ImageKit if it exists
+  if (user.image) {
+    if (user.image.includes("imagekit.io")) {
+      try {
+        await deleteFromImageKit(user.image);
+      } catch (err) {
+        console.error("Failed to delete user profile picture from ImageKit:", err);
+      }
+    } else if (user.image.includes("cloudinary.com")) {
+      console.warn("Skipping deletion of user profile picture from Cloudinary.");
     }
   }
 
-  // 2. Delete all manifestation images from Cloudinary
+  // 2. Delete all manifestation images from ImageKit
   for (const manifestation of user.manifestations) {
     if (manifestation.imageKey) {
       try {
-        await deleteFromCloudinary(manifestation.imageKey);
+        await deleteFromImageKit(manifestation.imageKey);
       } catch (err) {
         console.error(`Failed to delete manifestation image ${manifestation.imageKey}:`, err);
       }
     }
   }
 
-  // 3. Delete all journal images from Cloudinary
+  // 3. Delete all journal images from ImageKit
   for (const journal of user.journals) {
     if (journal.imageKey) {
       try {
-        await deleteFromCloudinary(journal.imageKey);
+        await deleteFromImageKit(journal.imageKey);
       } catch (err) {
         console.error(`Failed to delete journal image ${journal.imageKey}:`, err);
       }
@@ -323,15 +322,16 @@ const deleteProfileImage = async (userId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  // If the user has an uploaded image on Cloudinary, delete it
-  if (user.image && user.image.includes("cloudinary.com")) {
-    try {
-      const parts = user.image.split("/");
-      const filename = parts[parts.length - 1];
-      const publicId = filename.split(".")[0];
-      await deleteFromCloudinary(`profile_pictures/${publicId}`);
-    } catch (err) {
-      console.error("Failed to delete profile image from Cloudinary:", err);
+  // If the user has an uploaded image on ImageKit or Cloudinary, delete it
+  if (user.image) {
+    if (user.image.includes("imagekit.io")) {
+      try {
+        await deleteFromImageKit(user.image);
+      } catch (err) {
+        console.error("Failed to delete profile image from ImageKit:", err);
+      }
+    } else if (user.image.includes("cloudinary.com")) {
+      console.warn("Skipping deletion of profile image from Cloudinary.");
     }
   }
 

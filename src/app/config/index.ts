@@ -7,10 +7,10 @@ export default {
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET as string,
   jwt_refresh_expire: process.env.JWT_REFRESH_EXPIRES_IN as string,
   dev_snapshot_key: process.env.DEV_SNAPSHOT_KEY as string,
-  cloudinary: {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
-    api_key: process.env.CLOUDINARY_API_KEY as string,
-    api_secret: process.env.CLOUDINARY_API_SECRET as string,
+  imagekit: {
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY as string,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY as string,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT as string,
   },
   revenueCat: {
     apiKey: process.env.REVENUECAT_API_KEY as string,

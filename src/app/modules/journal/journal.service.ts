@@ -1,9 +1,9 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import {
-  deleteFromCloudinary,
-  uploadBufferToCloudinary,
-} from "../../utils/uploadCloudinary";
+  deleteFromImageKit,
+  uploadBufferToImageKit,
+} from "../../utils/uploadImageKit";
 import AppError from "../../error/AppError";
 import httpStatus from "http-status";
 import {
@@ -73,13 +73,13 @@ const createJournal = async (
   let imageKey: string | undefined;
 
   if (file) {
-    const uploadedImage = await uploadBufferToCloudinary(
+    const uploadedImage = await uploadBufferToImageKit(
       file.buffer,
       "journals",
     );
 
-    imageUrl = uploadedImage.secure_url;
-    imageKey = uploadedImage.public_id;
+    imageUrl = uploadedImage.url;
+    imageKey = uploadedImage.fileId;
   }
 
   // Priority: client-provided timeZone > reminder timeZone > UTC (no conversion)
@@ -302,16 +302,16 @@ const updateJournal = async (
 
   if (file) {
     if (existingJournal.imageKey) {
-      await deleteFromCloudinary(existingJournal.imageKey);
+      await deleteFromImageKit(existingJournal.imageKey);
     }
 
-    const uploadedImage = await uploadBufferToCloudinary(
+    const uploadedImage = await uploadBufferToImageKit(
       file.buffer,
       "journals",
     );
 
-    imageUrl = uploadedImage.secure_url;
-    imageKey = uploadedImage.public_id;
+    imageUrl = uploadedImage.url || null;
+    imageKey = uploadedImage.fileId || null;
   }
 
   // Priority: client-provided timeZone > reminder timeZone > UTC (no conversion)
@@ -422,7 +422,7 @@ const deleteJournal = async (userId: string, journalId: string) => {
   }
 
   if (journal.imageKey) {
-    await deleteFromCloudinary(journal.imageKey);
+    await deleteFromImageKit(journal.imageKey);
   }
 
   await prisma.$transaction(async (tx) => {
