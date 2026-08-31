@@ -1,3 +1,8 @@
+import { File } from "node:buffer";
+if (!globalThis.File) {
+  globalThis.File = File as any;
+}
+
 import app from "./app";
 import http from "http";
 import config from "./app/config";
