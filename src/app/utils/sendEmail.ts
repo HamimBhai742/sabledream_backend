@@ -1,56 +1,47 @@
+import nodemailer from "nodemailer";
 import httpStatus from "http-status";
 import AppError from "../error/AppError";
 
 const sendEmail = async (to: string, subject: string, html: string, text?: string) => {
-  const apiKey = process.env.BREVO_API_KEY;
-  const fromEmail = process.env.SMTP_FROM_EMAIL || "9d9583001@smtp-brevo.com";
+  const smtpHost = process.env.SMTP_HOST || "smtp-relay.brevo.com";
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const fromEmail = process.env.SMTP_FROM_EMAIL || "contact@sabledreams.com";
   const fromName = process.env.SMTP_FROM_NAME || "Sable Dreams";
 
-  if (!apiKey) {
+  if (!smtpUser || !smtpPass) {
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Email service not configured. BREVO_API_KEY is missing."
+      "Email service not configured. SMTP_USER and SMTP_PASS are missing."
     );
   }
 
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": apiKey,
-        "content-type": "application/json",
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
       },
-      body: JSON.stringify({
-        sender: {
-          name: fromName,
-          email: fromEmail,
-        },
-        to: [{ email: to }],
-        subject,
-        htmlContent: html,
-        ...(text ? { textContent: text } : {}),
-      }),
     });
 
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({})) as any;
-      const errorMessage = errorBody?.message || response.statusText;
-      console.error("[Email] Brevo API error:", errorMessage);
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        `Failed to send email: ${errorMessage}`
-      );
-    }
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to,
+      subject,
+      html,
+      text,
+    });
 
-    const result = await response.json();
-    return result;
+    return info;
   } catch (error: any) {
-    if (error instanceof AppError) throw error;
-    console.error("[Email] Unexpected error sending email:", error);
+    console.error("[Email] Nodemailer transport error:", error.message || error);
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Failed to send email. Please try again later."
+      `Failed to send email: ${error.message || error}`
     );
   }
 };
