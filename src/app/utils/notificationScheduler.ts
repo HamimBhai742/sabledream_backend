@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "../lib/prisma";
 import { sendPushNotification } from "./sendNotification";
+import { ChatService } from "../modules/chat/chat.service";
 
 const defaultTimeZone = "America/New_York";
 
@@ -313,24 +314,12 @@ export const startNotificationScheduler = () => {
   );
 
 
-  // Monthly cron job at 12:00 AM on the 1st day of every month to reset all users' monthlyTokenLimit to the configured default limit (defaulting to 50000).
+  // Monthly cron job at 12:00 AM on the 1st day of every month to reset all users' monthlyTokenLimit to default and reset proxy token baselines.
   cron.schedule(
     "0 0 1 * *",
     async () => {
       try {
-        const configRecord = await prisma.appConfig.findUnique({
-          where: { key: "default_monthly_token_limit" },
-        });
-        const defaultLimit = configRecord ? Number(configRecord.value) : 50000;
-
-        const result = await prisma.user.updateMany({
-          data: {
-            monthlyTokenLimit: defaultLimit,
-            hasSent90Warning: false,
-            hasSent100Warning: false,
-          },
-        });
-
+        await ChatService.performMonthlyReset();
       } catch (error) {
         console.error("[SCHEDULER] Error running monthly token limit reset:", error);
       }

@@ -270,6 +270,49 @@ const exportUsageToCsv = catchAsyncFn(async (req: Request, res: Response) => {
   res.status(httpStatus.OK).send(csvContent);
 });
 
+const resetUserUsage = catchAsyncFn(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
+  const adminEmail = req.user?.email || "admin@sabledream.com";
+  const userId = (req.params.userId || req.params.user_id) as string;
+  const month = (req.body?.month || req.query?.month) as string | undefined;
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  if (!userId) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User ID is required");
+  }
+
+  const result = await ChatService.resetUserUsage(adminId, adminEmail, userId, month);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+const resetAllUsersUsage = catchAsyncFn(async (req: Request, res: Response) => {
+  const adminId = req.user?.userId;
+  const adminEmail = req.user?.email || "admin@sabledream.com";
+  const month = (req.body?.month || req.query?.month) as string | undefined;
+
+  if (!adminId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized");
+  }
+
+  const result = await ChatService.resetAllUsersUsage(adminId, adminEmail, month);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
 export const ChatController = {
   sendMessage,
   getHistory,
@@ -286,4 +329,7 @@ export const ChatController = {
   getAuditLogs,
   getUserUsageHistory,
   exportUsageToCsv,
+  resetUserUsage,
+  resetAllUsersUsage,
 };
+

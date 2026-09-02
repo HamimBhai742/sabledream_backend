@@ -17,6 +17,10 @@ router.get("/history/:user_id", checkAuth("user", "admin"), ChatController.getHi
 router.delete("/history/:user_id", checkAuth("user", "admin"), ChatController.deleteHistory);
 router.get("/memory/:user_id", checkAuth("user", "admin"), ChatController.getMemory);
 router.get("/usage", checkAuth("admin"), ChatController.getAllUsersUsage);
+router.post("/usage/reset", checkAuth("admin"), ChatController.resetAllUsersUsage);
+router.post("/usage/reset-all", checkAuth("admin"), ChatController.resetAllUsersUsage);
+router.post("/usage/:userId/reset", checkAuth("admin"), ChatController.resetUserUsage);
+router.post("/usage/reset/:userId", checkAuth("admin"), ChatController.resetUserUsage);
 router.get("/export", checkAuth("admin"), ChatController.exportUsageToCsv);
 router.get("/usage/:user_id", checkAuth("admin"), ChatController.getUsage);
 

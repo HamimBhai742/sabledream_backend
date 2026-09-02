@@ -288,6 +288,34 @@ export const ChatService = {
     const currentP = proxyUsage?.prompt_tokens ?? 0;
     const currentC = proxyUsage?.completion_tokens ?? 0;
 
+    // If user's lastProxyTokens was never initialized (lastT === 0 && lastP === 0 && lastC === 0)
+    // and proxy already has usage (currentT > 0):
+    // Check if there is existing usage for the current month.
+    // If not, this is historical proxy usage accumulated from previous months.
+    // Set the baseline on the user record without attributing it to currentMonth.
+    if (lastT === 0 && lastP === 0 && lastC === 0 && currentT > 0) {
+      const existingUsage = await prisma.userMonthlyUsage.findUnique({
+        where: {
+          userId_monthYear: {
+            userId,
+            monthYear: currentMonth,
+          },
+        },
+      });
+
+      if (!existingUsage || (existingUsage.tokensUsed === 0 && existingUsage.messageCount === 0)) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            lastProxyTokens: currentT,
+            lastProxyPromptTokens: currentP,
+            lastProxyCompletionTokens: currentC,
+          },
+        });
+        return;
+      }
+    }
+
     let deltaT = currentT - lastT;
     let deltaP = currentP - lastP;
     let deltaC = currentC - lastC;
@@ -776,5 +804,204 @@ export const ChatService = {
         totalPage,
       },
     };
+  },
+
+  async resetUserUsage(adminId: string, adminEmail: string, targetUserId: string, monthYear?: string) {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const targetMonth = monthYear || currentMonth;
+
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { email: true },
+    });
+
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    // 1. Fetch live proxy tokens to sync baseline so future deltas start from 0
+    let currentT = 0;
+    let currentP = 0;
+    let currentC = 0;
+    try {
+      const rawUsage = await requestSableDreamChat<any>(`/api/v1/chat/usage/${encodeURIComponent(targetUserId)}`, { method: "GET" });
+      if (rawUsage) {
+        currentT = rawUsage.total_tokens ?? 0;
+        currentP = rawUsage.prompt_tokens ?? 0;
+        currentC = rawUsage.completion_tokens ?? 0;
+      }
+    } catch (err) {
+      console.warn(`[CHAT] Could not fetch live proxy usage during reset for user ${targetUserId}:`, err);
+    }
+
+    // 2. Reset or set UserMonthlyUsage to 0 for targetMonth
+    await prisma.userMonthlyUsage.upsert({
+      where: {
+        userId_monthYear: {
+          userId: targetUserId,
+          monthYear: targetMonth,
+        },
+      },
+      update: {
+        tokensUsed: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        messageCount: 0,
+      },
+      create: {
+        userId: targetUserId,
+        monthYear: targetMonth,
+        tokensUsed: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        messageCount: 0,
+      },
+    });
+
+    // 3. Update user's lastProxyTokens to match current proxy usage and clear warning flags
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: {
+        lastProxyTokens: currentT,
+        lastProxyPromptTokens: currentP,
+        lastProxyCompletionTokens: currentC,
+        hasSent90Warning: false,
+        hasSent100Warning: false,
+      },
+    });
+
+    // 4. Create Audit Log
+    if (/^[0-9a-fA-F]{24}$/.test(adminId)) {
+      await prisma.auditLog.create({
+        data: {
+          action: "RESET_USER_USAGE",
+          adminId,
+          adminEmail,
+          targetId: targetUserId,
+          targetEmail: user.email,
+          oldValue: "N/A",
+          newValue: `Reset usage to 0 for month ${targetMonth}`,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      message: `Token usage for user ${user.email} successfully reset to 0 for ${targetMonth}`,
+    };
+  },
+
+  async resetAllUsersUsage(adminId: string, adminEmail: string, monthYear?: string) {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const targetMonth = monthYear || currentMonth;
+
+    // 1. Reset all UserMonthlyUsage records for targetMonth
+    await prisma.userMonthlyUsage.updateMany({
+      where: { monthYear: targetMonth },
+      data: {
+        tokensUsed: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        messageCount: 0,
+      },
+    });
+
+    // 2. Fetch all users and sync their lastProxyTokens to current live proxy values
+    const users = await prisma.user.findMany({
+      where: { role: "user" },
+      select: { id: true },
+    });
+
+    await Promise.allSettled(
+      users.map(async (u) => {
+        try {
+          const rawUsage = await requestSableDreamChat<any>(`/api/v1/chat/usage/${encodeURIComponent(u.id)}`, { method: "GET" });
+          const currentT = rawUsage?.total_tokens ?? 0;
+          const currentP = rawUsage?.prompt_tokens ?? 0;
+          const currentC = rawUsage?.completion_tokens ?? 0;
+
+          await prisma.user.update({
+            where: { id: u.id },
+            data: {
+              lastProxyTokens: currentT,
+              lastProxyPromptTokens: currentP,
+              lastProxyCompletionTokens: currentC,
+              hasSent90Warning: false,
+              hasSent100Warning: false,
+            },
+          });
+        } catch {
+          await prisma.user.update({
+            where: { id: u.id },
+            data: {
+              hasSent90Warning: false,
+              hasSent100Warning: false,
+            },
+          });
+        }
+      })
+    );
+
+    // 3. Create Audit Log
+    if (/^[0-9a-fA-F]{24}$/.test(adminId)) {
+      await prisma.auditLog.create({
+        data: {
+          action: "RESET_ALL_USERS_USAGE",
+          adminId,
+          adminEmail,
+          targetEmail: "ALL_USERS",
+          oldValue: "N/A",
+          newValue: `Reset all users' usage to 0 for month ${targetMonth}`,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      message: `All users' token usage successfully reset to 0 for ${targetMonth}`,
+    };
+  },
+
+  async performMonthlyReset() {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const configRecord = await prisma.appConfig.findUnique({
+      where: { key: "default_monthly_token_limit" },
+    });
+    const defaultLimit = configRecord ? Number(configRecord.value) : 50000;
+
+    // 1. Reset limits and warning flags for all users
+    await prisma.user.updateMany({
+      data: {
+        monthlyTokenLimit: defaultLimit,
+        hasSent90Warning: false,
+        hasSent100Warning: false,
+      },
+    });
+
+    // 2. Snapshot current proxy tokens as baseline for all users
+    const users = await prisma.user.findMany({
+      where: { role: "user" },
+      select: { id: true },
+    });
+
+    for (const u of users) {
+      try {
+        const rawUsage = await requestSableDreamChat<any>(`/api/v1/chat/usage/${encodeURIComponent(u.id)}`, { method: "GET" });
+        if (rawUsage) {
+          await prisma.user.update({
+            where: { id: u.id },
+            data: {
+              lastProxyTokens: rawUsage.total_tokens ?? 0,
+              lastProxyPromptTokens: rawUsage.prompt_tokens ?? 0,
+              lastProxyCompletionTokens: rawUsage.completion_tokens ?? 0,
+            },
+          });
+        }
+      } catch (err) {
+        console.error(`[CHAT] Could not snapshot proxy tokens for user ${u.id}:`, err);
+      }
+    }
+
+    console.log(`[CHAT] Monthly token limit and usage baseline reset completed for ${currentMonth}`);
   },
 };
