@@ -69,6 +69,34 @@ const toDateFromMs = (value: unknown): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const isValidObjectId = (val?: string | null): boolean =>
+  Boolean(val && /^[0-9a-fA-F]{24}$/.test(val.trim()));
+
+const findUserByIdentifier = async (identifier?: string | null) => {
+  if (!identifier) return null;
+  const trimmed = identifier.trim();
+
+  // 1. If valid 24-hex string, try finding by MongoDB ObjectId
+  if (isValidObjectId(trimmed)) {
+    try {
+      const byId = await prisma.user.findUnique({ where: { id: trimmed } });
+      if (byId) return byId;
+    } catch {
+      // ignore and continue to other fields
+    }
+  }
+
+  // 2. Try finding by permanentId or email
+  return await prisma.user.findFirst({
+    where: {
+      OR: [
+        { permanentId: trimmed },
+        { email: { equals: trimmed, mode: "insensitive" } },
+      ],
+    },
+  });
+};
+
 export const SubscriptionService = {
   /**
    * Fetch subscription info for a user. Mapped to Figma design specifications.
@@ -163,25 +191,35 @@ export const SubscriptionService = {
       );
     }
 
-    // Call RevenueCat GET subscriber API
-    const response = await fetch(`https://api.revenuecat.com/v1/subscribers/${userId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-    });
+    // Try candidates: userId (MongoDB id), permanentId, and email
+    const candidateIds = [user.id, user.permanentId, user.email].filter(Boolean) as string[];
+    let subscriber: any = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new AppError(
-        httpStatus.BAD_GATEWAY,
-        `RevenueCat API error: ${response.statusText} - ${errorText}`
-      );
+    for (const candidate of candidateIds) {
+      try {
+        const response = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(candidate)}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as any;
+          if (data?.subscriber) {
+            const hasEntitlements = Object.keys(data.subscriber.entitlements || {}).length > 0;
+            const hasSubs = Object.keys(data.subscriber.subscriptions || {}).length > 0;
+            subscriber = data.subscriber;
+            if (hasEntitlements || hasSubs) {
+              break; // Found active/relevant subscriber record
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[RevenueCat Sync] Error querying candidate ${candidate}:`, err);
+      }
     }
-
-    const data = (await response.json()) as any;
-    const subscriber = data.subscriber;
 
     if (!subscriber) {
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Invalid response payload from RevenueCat");
@@ -298,20 +336,28 @@ export const SubscriptionService = {
     }
 
     const eventType = event.type;
-    const userId = event.app_user_id;
+    const rawUserId = event.app_user_id;
 
-    if (!userId) {
+    if (!rawUserId) {
       console.warn("[RevenueCat Webhook] Warning: Missing app_user_id in event.");
       return { success: false, message: "Missing app_user_id" };
     }
 
-    // Retrieve the user from our database
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    // Safely look up user across ObjectId, permanentId, email, or aliases
+    const candidateIds = [
+      rawUserId,
+      event.original_app_user_id,
+      ...(Array.isArray(event.aliases) ? event.aliases : []),
+    ].filter(Boolean) as string[];
+
+    let user = null;
+    for (const candidate of candidateIds) {
+      user = await findUserByIdentifier(candidate);
+      if (user) break;
+    }
 
     if (!user) {
-      console.warn(`[RevenueCat Webhook] Warning: User with ID ${userId} not found in our database. Skipping update.`);
+      console.warn(`[RevenueCat Webhook] Warning: User matching '${rawUserId}' not found in database. Skipping update.`);
       return { success: false, message: "User not found in local database" };
     }
 
@@ -384,15 +430,15 @@ export const SubscriptionService = {
       purchaseDate,
       originalPurchaseDate,
       paymentMethod: store,
-      revenueCatUserId: userId,
+      revenueCatUserId: rawUserId,
     };
 
-    // Upsert the subscription
+    // Upsert the subscription using the resolved user's database ID
     await prisma.subscription.upsert({
-      where: { userId },
+      where: { userId: user.id },
       update: subscriptionData,
       create: {
-        userId,
+        userId: user.id,
         ...subscriptionData,
       },
     });
@@ -422,21 +468,30 @@ export const SubscriptionService = {
     }
 
     // Create a transaction record for charges or refunds
-    if (event.transaction_id && event.price !== undefined) {
-      const txId = event.transaction_id;
-      const amount = event.price;
-      const type = eventType === "CANCELLATION" && event.cancel_reason === "UNSUBSCRIBE" ? "charge" : 
-                   (eventType === "CANCELLATION" ? "refund" : "charge");
+    const txId = event.transaction_id || event.original_transaction_id || event.id;
+    const priceAmount =
+      typeof event.price === "number"
+        ? event.price
+        : typeof event.price_in_purchased_currency === "number"
+          ? event.price_in_purchased_currency
+          : (planMeta?.amount ?? 0);
+
+    if (txId && (status === "active" || status === "trial" || eventType === "CANCELLATION")) {
+      const type =
+        eventType === "CANCELLATION" && event.cancel_reason !== "UNSUBSCRIBE"
+          ? "refund"
+          : "charge";
 
       await prisma.transaction.upsert({
-        where: { transactionId: txId },
+        where: { transactionId: String(txId) },
         update: {
           status: "success",
+          amount: priceAmount,
         },
         create: {
-          userId,
-          transactionId: txId,
-          amount: amount,
+          userId: user.id,
+          transactionId: String(txId),
+          amount: priceAmount,
           status: "success",
           name: user.name,
           phone: user.phone || null,

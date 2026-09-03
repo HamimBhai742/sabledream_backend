@@ -74,8 +74,9 @@ const handleWebhook = catchAsyncFn(async (req: Request, res: Response) => {
   const webhookAuth = config.revenueCat.webhookAuth;
   // Verify authorization secret if it is configured in env variables
   if (webhookAuth) {
-    const expectedAuth = webhookAuth.startsWith("Bearer ") ? webhookAuth : `Bearer ${webhookAuth}`;
-    if (!authHeader || authHeader !== expectedAuth) {
+    const cleanAuthHeader = authHeader ? authHeader.replace(/^Bearer\s+/i, "").trim() : "";
+    const cleanWebhookAuth = webhookAuth.replace(/^Bearer\s+/i, "").trim();
+    if (!cleanAuthHeader || cleanAuthHeader !== cleanWebhookAuth) {
       throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized webhook source");
     }
   }

@@ -57,6 +57,10 @@ const routes = [
     route: SubscriptionRoutes,
   },
   {
+    path: "/subscription",
+    route: SubscriptionRoutes,
+  },
+  {
     path: "/books",
     route: BooksRoutes,
   },

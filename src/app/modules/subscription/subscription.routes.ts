@@ -6,7 +6,7 @@ const router = Router();
 
 // Retrieve user's current subscription details
 router.get(
-  "/me",
+  ["/me", "/details"],
   checkAuth("user", "admin"),
   SubscriptionController.getSubscriptionDetails
 );
