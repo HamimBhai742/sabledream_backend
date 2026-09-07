@@ -1,4 +1,5 @@
 import sendEmail from "../sendEmail";
+import { sendBrevoEmail } from "../sendBrevoEmail";
 
 interface DeleteAccountPermanentData {
   userName: string;
@@ -12,6 +13,26 @@ export const deleteAccountPermanentTemplate = async (
   data: DeleteAccountPermanentData,
 ) => {
   const { userName, email, deletedAt, ipAddress, device } = data;
+
+  if (process.env.BREVO_API_KEY || process.env.SMTP_PASS) {
+    try {
+      await sendBrevoEmail({
+        toEmail: email,
+        toName: userName,
+        templateId: 15, // Brevo Template #15: Account deleted
+        params: {
+          NAME: userName,
+          userName,
+          deletedAt,
+          ipAddress: ipAddress || "N/A",
+          device: device || "Unknown Device",
+        },
+      });
+      return;
+    } catch (brevoErr) {
+      console.warn("[Email] Brevo API failed for deleteAccountPermanent, falling back to SMTP:", brevoErr);
+    }
+  }
 
   const subject = "🖤 Your Account Has Been Permanently Deleted";
 

@@ -1,4 +1,5 @@
 import sendEmail from "../sendEmail";
+import { sendBrevoEmail } from "../sendBrevoEmail";
 
 interface SubscriptionDetailsData {
   userName: string;
@@ -13,6 +14,27 @@ export const subscriptionDetailsTemplate = async (
   data: SubscriptionDetailsData,
 ) => {
   const { userName, email, planName, price, renewsAt, joinedAt } = data;
+
+  if (process.env.BREVO_API_KEY || process.env.SMTP_PASS) {
+    try {
+      await sendBrevoEmail({
+        toEmail: email,
+        toName: userName,
+        templateId: 11, // Brevo Template #11: Subscription renewed
+        params: {
+          NAME: userName,
+          userName,
+          planName,
+          price,
+          renewsAt,
+          joinedAt,
+        },
+      });
+      return;
+    } catch (brevoErr) {
+      console.warn("[Email] Brevo API failed for subscriptionDetails, falling back to SMTP:", brevoErr);
+    }
+  }
 
   const subject = "💕 Your Sable Dreams Subscription Is Confirmed";
 

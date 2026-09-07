@@ -6,6 +6,33 @@ import { SableDreamChatMessageResponse } from "./chat.types";
 import { sendPushNotification } from "../../utils/sendNotification";
 import { ensurePermanentUserId } from "../../utils/generatePermanentUserId";
 
+export const notifyCapacityIncreased = async (userId: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { fcmToken: true },
+    });
+
+    const title = "Capacity Increased";
+    const body = "Your access to Sable has been increased for this month. 💖";
+
+    if (user?.fcmToken) {
+      await sendPushNotification(user.fcmToken, title, body, { screen: "chat" }, userId);
+    } else {
+      await prisma.notification.create({
+        data: {
+          userId,
+          title,
+          body,
+          data: { screen: "chat" },
+        },
+      });
+    }
+  } catch (err) {
+    console.error(`[CHAT] Failed to send capacity increased notification to user ${userId}:`, err);
+  }
+};
+
 const withTrailingSlash = (value: string) => (value.endsWith("/") ? value : `${value}/`);
 
 const buildUrl = (path: string) => {
@@ -463,6 +490,10 @@ export const ChatService = {
       },
     });
 
+    if (type === "increase") {
+      await notifyCapacityIncreased(targetUserId);
+    }
+
     // Write audit log
     await prisma.auditLog.create({
       data: {
@@ -870,6 +901,8 @@ export const ChatService = {
       },
     });
 
+    await notifyCapacityIncreased(targetUserId);
+
     // 4. Create Audit Log
     if (/^[0-9a-fA-F]{24}$/.test(adminId)) {
       await prisma.auditLog.create({
@@ -1000,6 +1033,7 @@ export const ChatService = {
       } catch (err) {
         console.error(`[CHAT] Could not snapshot proxy tokens for user ${u.id}:`, err);
       }
+      await notifyCapacityIncreased(u.id);
     }
 
     console.log(`[CHAT] Monthly token limit and usage baseline reset completed for ${currentMonth}`);

@@ -115,8 +115,7 @@ export const startNotificationScheduler = () => {
               {
                 screen: "journal",
                 frequency: "daily",
-              },
-              reminder.userId
+              }
             );
           }
           if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
@@ -127,8 +126,7 @@ export const startNotificationScheduler = () => {
               {
                 screen: "journal",
                 frequency: "weekly",
-              },
-              reminder.userId
+              }
             );
           }
           if (reminder.monthlyEnabled && monthlyDue) {
@@ -139,8 +137,7 @@ export const startNotificationScheduler = () => {
               {
                 screen: "journal",
                 frequency: "monthly",
-              },
-              reminder.userId
+              }
             );
           }
         } else if (reminder.type === "mood") {
@@ -152,8 +149,7 @@ export const startNotificationScheduler = () => {
               {
                 screen: "mood",
                 frequency: "daily",
-              },
-              reminder.userId
+              }
             );
           }
           if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
@@ -164,8 +160,7 @@ export const startNotificationScheduler = () => {
               {
                 screen: "mood",
                 frequency: "weekly",
-              },
-              reminder.userId
+              }
             );
           }
           if (reminder.monthlyEnabled && monthlyDue) {
@@ -176,8 +171,7 @@ export const startNotificationScheduler = () => {
               {
                 screen: "mood",
                 frequency: "monthly",
-              },
-              reminder.userId
+              }
             );
           }
         } else if (reminder.type === "affirmation") {
@@ -195,8 +189,7 @@ export const startNotificationScheduler = () => {
                 screen: "affirmation",
                 frequency: "daily",
                 affirmationId: dynamicAffirmation?.id || "",
-              },
-              reminder.userId
+              }
             );
           }
           if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
@@ -208,8 +201,7 @@ export const startNotificationScheduler = () => {
                 screen: "affirmation",
                 frequency: "weekly",
                 affirmationId: dynamicAffirmation?.id || "",
-              },
-              reminder.userId
+              }
             );
           }
           if (reminder.monthlyEnabled && monthlyDue) {
@@ -221,8 +213,7 @@ export const startNotificationScheduler = () => {
                 screen: "affirmation",
                 frequency: "monthly",
                 affirmationId: dynamicAffirmation?.id || "",
-              },
-              reminder.userId
+              }
             );
           }
         }

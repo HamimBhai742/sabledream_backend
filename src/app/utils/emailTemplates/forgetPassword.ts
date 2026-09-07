@@ -1,4 +1,5 @@
 import sendEmail from "../sendEmail";
+import { sendBrevoEmail } from "../sendBrevoEmail";
 
 interface ForgotPasswordData {
   userName: string;
@@ -9,6 +10,26 @@ interface ForgotPasswordData {
 
 export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
   const { userName, email, otp, requestedAt } = data;
+
+  if (process.env.BREVO_API_KEY || process.env.SMTP_PASS) {
+    try {
+      await sendBrevoEmail({
+        toEmail: email,
+        toName: userName,
+        templateId: 12, // Brevo Template #12: Password reset
+        params: {
+          OTP: otp,
+          otp,
+          NAME: userName,
+          userName,
+          requestedAt,
+        },
+      });
+      return;
+    } catch (brevoErr) {
+      console.warn("[Email] Brevo API failed for forgetPassword, falling back to SMTP:", brevoErr);
+    }
+  }
 
   const subject = "🌸 Reset Your Password";
 
@@ -243,4 +264,4 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
   `;
 
   await sendEmail(email, subject, html);
-};
+};

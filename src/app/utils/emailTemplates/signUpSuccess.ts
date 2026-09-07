@@ -1,4 +1,5 @@
 import sendEmail from "../sendEmail";
+import { sendBrevoEmail } from "../sendBrevoEmail";
 
 interface WelcomeSableDreamData {
   userName: string;
@@ -10,6 +11,24 @@ export const welcomeSableDreamTemplate = async (
   data: WelcomeSableDreamData,
 ) => {
   const { userName, email, joinedAt } = data;
+
+  if (process.env.BREVO_API_KEY || process.env.SMTP_PASS) {
+    try {
+      await sendBrevoEmail({
+        toEmail: email,
+        toName: userName,
+        templateId: 6, // Brevo Template #6: Sign Up Welcome Email
+        params: {
+          NAME: userName,
+          userName,
+          joinedAt,
+        },
+      });
+      return;
+    } catch (brevoErr) {
+      console.warn("[Email] Brevo API failed for welcomeSableDream, falling back to SMTP:", brevoErr);
+    }
+  }
 
   const subject = "🌸 Welcome to Sable Dreams — You're In!";
 

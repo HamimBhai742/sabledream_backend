@@ -1,5 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { deleteFromImageKit, uploadBufferToImageKit } from '../../utils/uploadImageKit';
+import httpStatus from 'http-status';
+import AppError from '../../error/AppError';
 
 const createManifestation = async (userId: string, data: any, file?: Express.Multer.File) => {
   let imageUrl = null;
@@ -102,14 +104,21 @@ const deleteManifestation = async (userId: string, manifestationId: string) => {
     },
   });
 
-  if (existingManifestation?.imageKey) {
-    await deleteFromImageKit(existingManifestation.imageKey);
+  if (!existingManifestation) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Manifestation not found');
+  }
+
+  if (existingManifestation.imageKey) {
+    try {
+      await deleteFromImageKit(existingManifestation.imageKey);
+    } catch (err) {
+      console.error(`[Manifestation] Failed to delete image ${existingManifestation.imageKey} from ImageKit:`, err);
+    }
   }
 
   return await prisma.manifestation.delete({
     where: {
       id: manifestationId,
-      userId,
     },
   });
 };

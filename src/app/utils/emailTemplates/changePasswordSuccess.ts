@@ -1,4 +1,5 @@
 import sendEmail from "../sendEmail";
+import { sendBrevoEmail } from "../sendBrevoEmail";
 
 interface ChangePasswordSuccessData {
   userName: string;
@@ -12,6 +13,26 @@ export const changePasswordSuccessTemplate = async (
   data: ChangePasswordSuccessData,
 ) => {
   const { userName, email, changedAt, ipAddress, device } = data;
+
+  if (process.env.BREVO_API_KEY || process.env.SMTP_PASS) {
+    try {
+      await sendBrevoEmail({
+        toEmail: email,
+        toName: userName,
+        templateId: 14, // Brevo Template #14: Password was changed
+        params: {
+          NAME: userName,
+          userName,
+          changedAt,
+          ipAddress: ipAddress || "N/A",
+          device: device || "Unknown Device",
+        },
+      });
+      return;
+    } catch (brevoErr) {
+      console.warn("[Email] Brevo API failed for changePasswordSuccess, falling back to SMTP:", brevoErr);
+    }
+  }
 
   const subject = "🔐 Your Password Has Been Changed Successfully";
 

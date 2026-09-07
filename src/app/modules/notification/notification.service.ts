@@ -10,15 +10,24 @@ const getUserNotifications = async (
   const limit = parseInt(query.limit || "10", 10);
   const skip = (page - 1) * limit;
 
+  const whereClause = {
+    userId,
+    NOT: {
+      title: {
+        in: ["Journal Reminder", "Mood Reminder", "Affirmation Reminder"],
+      },
+    },
+  };
+
   const [notifications, total] = await Promise.all([
     prisma.notification.findMany({
-      where: { userId },
+      where: whereClause,
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
     }),
     prisma.notification.count({
-      where: { userId },
+      where: whereClause,
     }),
   ]);
 

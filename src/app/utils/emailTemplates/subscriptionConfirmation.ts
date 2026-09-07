@@ -1,4 +1,5 @@
 import sendEmail from "../sendEmail";
+import { sendBrevoEmail } from "../sendBrevoEmail";
 
 interface SubscriptionConfirmationData {
   userName: string;
@@ -9,6 +10,23 @@ export const subscriptionConfirmationTemplate = async (
   data: SubscriptionConfirmationData,
 ) => {
   const { userName, email } = data;
+
+  if (process.env.BREVO_API_KEY || process.env.SMTP_PASS) {
+    try {
+      await sendBrevoEmail({
+        toEmail: email,
+        toName: userName,
+        templateId: 5, // Brevo Template #5: Subscription Confirmation Email
+        params: {
+          NAME: userName,
+          userName,
+        },
+      });
+      return;
+    } catch (brevoErr) {
+      console.warn("[Email] Brevo API failed for subscriptionConfirmation, falling back to SMTP:", brevoErr);
+    }
+  }
 
   const subject = "💕 Welcome to Sable Dreams — Your Journey Begins Now";
 
