@@ -4,6 +4,9 @@ import AppError from "../../error/AppError";
 import httpStatus from "http-status";
 import { subscriptionConfirmationTemplate } from "../../utils/emailTemplates/subscriptionConfirmation";
 import { subscriptionDetailsTemplate } from "../../utils/emailTemplates/subscriptionDetails";
+import { subscriptionCanceledTemplate } from "../../utils/emailTemplates/subscriptionCanceled";
+import { subscriptionEndedTemplate } from "../../utils/emailTemplates/subscriptionEnded";
+import { billingIssueTemplate } from "../../utils/emailTemplates/billingIssue";
 
 // Map Product ID to plan name, cost, and frequency
 const PRODUCT_PLAN_MAP: Record<string, { name: string; type: "monthly" | "annual"; amount: number }> = {
@@ -473,6 +476,50 @@ export const SubscriptionService = {
         });
       } catch (err) {
         console.error("[RevenueCat Webhook] Failed to send subscription details email:", err);
+      }
+    } else if (eventType === "RENEWAL") {
+      try {
+        await subscriptionDetailsTemplate({
+          userName: user.name,
+          email: user.email,
+          planName: planMeta?.name || "Premium Plan",
+          price: event.price !== undefined ? `$${event.price}` : `$${planMeta?.amount || 5.0}`,
+          renewsAt: expiresDate ? expiresDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A",
+          joinedAt: user.createdAt ? user.createdAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+        });
+      } catch (err) {
+        console.error("[RevenueCat Webhook] Failed to send subscription renewal email:", err);
+      }
+    } else if (eventType === "CANCELLATION") {
+      try {
+        await subscriptionCanceledTemplate({
+          userName: user.name,
+          email: user.email,
+          planName: planMeta?.name || "Premium Plan",
+          expiresAt: expiresDate ? expiresDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "End of billing period",
+        });
+      } catch (err) {
+        console.error("[RevenueCat Webhook] Failed to send subscription canceled email:", err);
+      }
+    } else if (eventType === "EXPIRATION") {
+      try {
+        await subscriptionEndedTemplate({
+          userName: user.name,
+          email: user.email,
+          planName: planMeta?.name || "Premium Plan",
+        });
+      } catch (err) {
+        console.error("[RevenueCat Webhook] Failed to send subscription ended email:", err);
+      }
+    } else if (eventType === "BILLING_ISSUE") {
+      try {
+        await billingIssueTemplate({
+          userName: user.name,
+          email: user.email,
+          planName: planMeta?.name || "Premium Plan",
+        });
+      } catch (err) {
+        console.error("[RevenueCat Webhook] Failed to send billing issue email:", err);
       }
     }
 
