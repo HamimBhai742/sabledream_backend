@@ -6,6 +6,7 @@ import { deleteFromImageKit, uploadBufferToImageKit } from "../../utils/uploadIm
 import { changePasswordSuccessTemplate } from "../../utils/emailTemplates/changePasswordSuccess";
 import { getDeviceInfo } from "../../utils/deviceParser";
 import { deleteAccountPermanentTemplate } from "../../utils/emailTemplates/deleteAccount";
+import { emailAddressChangedTemplate } from "../../utils/emailTemplates/emailAddressChanged";
 
 const updateProfile = async (
   userId: string,
@@ -59,6 +60,8 @@ const updateProfile = async (
     imageUrl = uploadResult.url || null;
   }
 
+  const oldEmail = user.email;
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
@@ -70,6 +73,18 @@ const updateProfile = async (
       fcmToken: updateData.fcmToken,
     },
   });
+
+  if (updateData.email && updateData.email !== oldEmail) {
+    try {
+      await emailAddressChangedTemplate({
+        userName: updatedUser.name,
+        email: oldEmail,
+        newEmail: updatedUser.email,
+      });
+    } catch (err) {
+      console.error("[Email] Failed to send emailAddressChanged notification:", err);
+    }
+  }
 
   // Exclude password from the returned object for security
   const { password, ...userWithoutPassword } = updatedUser;
