@@ -16,10 +16,10 @@ const notifyManifestationEvent = async (
     });
 
     const isCreated = event === 'created';
-    const title = isCreated ? 'Manifestation Saved' : 'Manifestation Arrived';
+    const title = isCreated ? 'Manifestation successfully saved' : 'Manifestation Arrived';
     const titleSnippet = manifestationTitle ? ` "${manifestationTitle}"` : '';
     const body = isCreated
-      ? `Your manifestation${titleSnippet} has been saved. Believe in your vision. ✨`
+      ? '✨ Your dream is saved. Keep moving toward it.'
       : `Congratulations! Your manifestation${titleSnippet} has arrived. 🎉`;
 
     const dataPayload = { screen: 'manifestation', event };
