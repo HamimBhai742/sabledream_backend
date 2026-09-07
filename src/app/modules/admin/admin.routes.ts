@@ -32,6 +32,7 @@ router.get("/content/manifestations", AdminController.getAllManifestations);
 router.delete("/content/manifestations/:manifestationId", AdminController.deleteManifestation);
 router.get("/content/moods/analytics", AdminController.getMoodAnalytics);
 
+router.get("/subscriptions", AdminController.getActiveSubscriptions);
 router.get("/subscriptions/active", AdminController.getActiveSubscriptions);
 router.get("/subscriptions/transactions", AdminController.getTransactions);
 router.get("/subscriptions/summary", AdminController.getSubscriptionSummary);

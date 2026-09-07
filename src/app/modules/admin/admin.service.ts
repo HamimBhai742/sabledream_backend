@@ -118,7 +118,7 @@ export const AdminService = {
       prisma.subscription.count({
         where: {
           status: { in: ["active", "trial"] },
-          expiresDate: { gt: now },
+          OR: [{ expiresDate: { gt: now } }, { expiresDate: null }],
         },
       }),
       prisma.transaction.aggregate({
@@ -626,13 +626,16 @@ export const AdminService = {
 
     const where: any = {
       status: { in: ["active", "trial"] },
-      expiresDate: { gt: now },
+      OR: [{ expiresDate: { gt: now } }, { expiresDate: null }],
     };
 
     if (status && ["active", "trial", "expired"].includes(status)) {
-      where.status = status === "expired" ? "expired" : { in: [status] };
       if (status === "expired") {
-        delete where.expiresDate;
+        delete where.status;
+        delete where.OR;
+        where.OR = [{ status: "expired" }, { expiresDate: { lte: now } }];
+      } else {
+        where.status = status;
       }
     }
 
@@ -733,13 +736,13 @@ export const AdminService = {
     ] = await Promise.all([
       prisma.subscription.count(),
       prisma.subscription.count({
-        where: { status: "active", expiresDate: { gt: now } },
+        where: { status: "active", OR: [{ expiresDate: { gt: now } }, { expiresDate: null }] },
       }),
       prisma.subscription.count({
-        where: { status: "trial", expiresDate: { gt: now } },
+        where: { status: "trial", OR: [{ expiresDate: { gt: now } }, { expiresDate: null }] },
       }),
       prisma.subscription.count({
-        where: { status: "expired" },
+        where: { OR: [{ status: "expired" }, { expiresDate: { lte: now } }] },
       }),
       prisma.transaction.count(),
     ]);

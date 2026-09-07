@@ -418,17 +418,21 @@ export const ChatService = {
       updateData.hasSent90Warning = true;
       shouldUpdate = true;
 
+      const title = "AI Chat Warning";
+      const body = "You have reached 90% of your access to Sable this month 💕";
+      const payload = { screen: "chat", type: "usage_warning_90" };
+
       if (user.fcmToken) {
-        await sendPushNotification(
-          user.fcmToken,
-          "AI Chat Warning",
-          "You have used 90% of your monthly AI token limit.",
-          {
-            screen: "chat",
-            type: "usage_warning_90",
+        await sendPushNotification(user.fcmToken, title, body, payload, userId);
+      } else {
+        await prisma.notification.create({
+          data: {
+            userId,
+            title,
+            body,
+            data: payload,
           },
-          userId
-        );
+        });
       }
     }
 
@@ -437,17 +441,21 @@ export const ChatService = {
       updateData.hasSent100Warning = true;
       shouldUpdate = true;
 
+      const title = "Sable Capacity Reached";
+      const body = "You’ve reached your monthly Sable capacity. Your commitment to becoming is beautiful. New messages will open at the start of your next month.";
+      const payload = { screen: "chat", type: "usage_warning_100" };
+
       if (user.fcmToken) {
-        await sendPushNotification(
-          user.fcmToken,
-          "Sable Capacity Reached",
-          "You’ve reached your monthly Sable capacity. Your commitment to becoming is beautiful. New messages will open at the start of your next month.",
-          {
-            screen: "chat",
-            type: "usage_warning_100",
+        await sendPushNotification(user.fcmToken, title, body, payload, userId);
+      } else {
+        await prisma.notification.create({
+          data: {
+            userId,
+            title,
+            body,
+            data: payload,
           },
-          userId
-        );
+        });
       }
     }
 

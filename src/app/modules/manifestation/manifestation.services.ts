@@ -2,6 +2,44 @@ import { prisma } from '../../lib/prisma';
 import { deleteFromImageKit, uploadBufferToImageKit } from '../../utils/uploadImageKit';
 import httpStatus from 'http-status';
 import AppError from '../../error/AppError';
+import { sendPushNotification } from '../../utils/sendNotification';
+
+const notifyManifestationEvent = async (
+  userId: string,
+  event: 'created' | 'completed',
+  manifestationTitle?: string
+) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { fcmToken: true },
+    });
+
+    const isCreated = event === 'created';
+    const title = isCreated ? 'Manifestation Saved' : 'Manifestation Arrived';
+    const titleSnippet = manifestationTitle ? ` "${manifestationTitle}"` : '';
+    const body = isCreated
+      ? `Your manifestation${titleSnippet} has been saved. Believe in your vision. ✨`
+      : `Congratulations! Your manifestation${titleSnippet} has arrived. 🎉`;
+
+    const dataPayload = { screen: 'manifestation', event };
+
+    if (user?.fcmToken) {
+      await sendPushNotification(user.fcmToken, title, body, dataPayload, userId);
+    } else {
+      await prisma.notification.create({
+        data: {
+          userId,
+          title,
+          body,
+          data: dataPayload,
+        },
+      });
+    }
+  } catch (err) {
+    console.error(`[Manifestation] Notification error for user ${userId}:`, err);
+  }
+};
 
 const createManifestation = async (userId: string, data: any, file?: Express.Multer.File) => {
   let imageUrl = null;
@@ -15,7 +53,7 @@ const createManifestation = async (userId: string, data: any, file?: Express.Mul
 
   const manifestationData = typeof data.data === 'string' ? JSON.parse(data.data) : data;
 
-  return await prisma.manifestation.create({
+  const created = await prisma.manifestation.create({
     data: {
       userId,
       ...manifestationData,
@@ -24,6 +62,10 @@ const createManifestation = async (userId: string, data: any, file?: Express.Mul
       imageKey,
     },
   });
+
+  await notifyManifestationEvent(userId, 'created', created.name);
+
+  return created;
 };
 
 const getMyManifestations = async (userId: string) => {
@@ -82,7 +124,7 @@ const updateManifestation = async (userId: string, manifestationId: string, data
     }
   }
 
-  return await prisma.manifestation.update({
+  const updated = await prisma.manifestation.update({
     where: {
       id: manifestationId,
       userId,
@@ -94,6 +136,13 @@ const updateManifestation = async (userId: string, manifestationId: string, data
       imageKey,
     },
   });
+
+  const isCompletedNow = (status === 'Done' || status === 'completed') && existingManifestation.status !== 'Done' && existingManifestation.status !== 'completed';
+  if (isCompletedNow) {
+    await notifyManifestationEvent(userId, 'completed', updated.name || existingManifestation.name);
+  }
+
+  return updated;
 };
 
 const deleteManifestation = async (userId: string, manifestationId: string) => {
