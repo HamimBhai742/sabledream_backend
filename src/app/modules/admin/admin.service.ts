@@ -2,6 +2,7 @@ import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import AppError from "../../error/AppError";
 import { JournalService } from "../journal/journal.service";
+import { SubscriptionService } from "../subscription/subscription.service";
 import { TJournalQuery } from "../../interface/journal.interface";
 import { deleteFromImageKit } from "../../utils/uploadImageKit";
 import { ensurePermanentUserId } from "../../utils/generatePermanentUserId";
@@ -758,6 +759,31 @@ export const AdminService = {
         total: totalTransactions,
       },
       asOf: now.toISOString(),
+    };
+  },
+
+  async syncAllSubscriptions() {
+    const users = await prisma.user.findMany({
+      select: { id: true, email: true },
+    });
+
+    let syncedCount = 0;
+    let failedCount = 0;
+
+    for (const u of users) {
+      try {
+        await SubscriptionService.syncRevenueCatSubscription(u.id);
+        syncedCount++;
+      } catch {
+        failedCount++;
+      }
+    }
+
+    return {
+      success: true,
+      message: `RevenueCat subscription sync completed. Synced: ${syncedCount}, Skipped: ${failedCount}`,
+      syncedCount,
+      failedCount,
     };
   },
 

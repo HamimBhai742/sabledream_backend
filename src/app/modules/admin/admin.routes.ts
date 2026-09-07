@@ -36,6 +36,7 @@ router.get("/subscriptions", AdminController.getActiveSubscriptions);
 router.get("/subscriptions/active", AdminController.getActiveSubscriptions);
 router.get("/subscriptions/transactions", AdminController.getTransactions);
 router.get("/subscriptions/summary", AdminController.getSubscriptionSummary);
+router.post("/subscriptions/sync", AdminController.syncAllSubscriptions);
 
 router.get("/metrics/user-activity", AdminController.getUserActivityMetrics);
 router.get("/metrics/user-activity/export-csv", AdminController.exportUserActivityMetricsCSV);

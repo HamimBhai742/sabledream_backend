@@ -72,6 +72,14 @@ const toDateFromMs = (value: unknown): Date | null => {
 const isValidObjectId = (val?: string | null): boolean =>
   Boolean(val && /^[0-9a-fA-F]{24}$/.test(val.trim()));
 
+const normalizePaymentMethod = (storeStr?: string | null): string => {
+  if (!storeStr) return "App Store";
+  const s = String(storeStr).toLowerCase();
+  if (s.includes("play") || s.includes("google") || s.includes("android")) return "Google Play";
+  if (s.includes("app_store") || s.includes("apple") || s.includes("ios")) return "App Store";
+  return storeStr;
+};
+
 const findUserByIdentifier = async (identifier?: string | null) => {
   if (!identifier) return null;
   const trimmed = identifier.trim();
@@ -86,12 +94,13 @@ const findUserByIdentifier = async (identifier?: string | null) => {
     }
   }
 
-  // 2. Try finding by permanentId or email
+  // 2. Try finding by permanentId, email, or linked revenueCatUserId
   return await prisma.user.findFirst({
     where: {
       OR: [
         { permanentId: trimmed },
         { email: { equals: trimmed, mode: "insensitive" } },
+        { subscription: { revenueCatUserId: trimmed } },
       ],
     },
   });
@@ -264,7 +273,7 @@ export const SubscriptionService = {
         originalPurchaseDate: activeEntitlement.original_purchase_date
           ? new Date(activeEntitlement.original_purchase_date)
           : null,
-        paymentMethod: subscriber.subscriptions?.[productId]?.store || "App Store",
+        paymentMethod: normalizePaymentMethod(subscriber.subscriptions?.[productId]?.store || "App Store"),
         revenueCatUserId: userId,
       };
 
@@ -429,7 +438,7 @@ export const SubscriptionService = {
       expiresDate,
       purchaseDate,
       originalPurchaseDate,
-      paymentMethod: store,
+      paymentMethod: normalizePaymentMethod(store),
       revenueCatUserId: rawUserId,
     };
 

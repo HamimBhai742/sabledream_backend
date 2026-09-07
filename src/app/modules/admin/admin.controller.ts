@@ -226,6 +226,17 @@ export const AdminController = {
     });
   }),
 
+  syncAllSubscriptions: catchAsyncFn(async (_req: Request, res: Response) => {
+    const result = await AdminService.syncAllSubscriptions();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.message,
+      data: result as any,
+    });
+  }),
+
   getUserActivityMetrics: catchAsyncFn(async (req: Request, res: Response) => {
     const monthYear = req.query.monthYear as string | undefined;
     const result = await AdminService.getUserActivityMetrics(monthYear);
