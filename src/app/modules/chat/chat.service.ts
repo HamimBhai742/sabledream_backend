@@ -13,8 +13,8 @@ export const notifyCapacityIncreased = async (userId: string) => {
       select: { fcmToken: true },
     });
 
-    const title = "Capacity Increased";
-    const body = "Your access to Sable has been increased for this month. 💖";
+    const title = "Your Sable capacity has been increased.";
+    const body = "You can continue your reflection. ✨";
 
     if (user?.fcmToken) {
       await sendPushNotification(user.fcmToken, title, body, { screen: "chat" }, userId);

@@ -5,40 +5,12 @@ import AppError from '../../error/AppError';
 import { sendPushNotification } from '../../utils/sendNotification';
 
 const notifyManifestationEvent = async (
-  userId: string,
-  event: 'created' | 'completed',
-  manifestationTitle?: string
+  _userId: string,
+  _event: 'created' | 'completed',
+  _manifestationTitle?: string
 ) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { fcmToken: true },
-    });
-
-    const isCreated = event === 'created';
-    const title = isCreated ? 'Manifestation successfully saved' : 'Manifestation Arrived';
-    const titleSnippet = manifestationTitle ? ` "${manifestationTitle}"` : '';
-    const body = isCreated
-      ? '✨ Your dream is saved. Keep moving toward it.'
-      : `Congratulations! Your manifestation${titleSnippet} has arrived. 🎉`;
-
-    const dataPayload = { screen: 'manifestation', event };
-
-    if (user?.fcmToken) {
-      await sendPushNotification(user.fcmToken, title, body, dataPayload, userId);
-    } else {
-      await prisma.notification.create({
-        data: {
-          userId,
-          title,
-          body,
-          data: dataPayload,
-        },
-      });
-    }
-  } catch (err) {
-    console.error(`[Manifestation] Notification error for user ${userId}:`, err);
-  }
+  // Disabled per client instruction: "NO OTHER IN APP NOTIFICATIONS ARE NEEDED. DELETE ALL OTHERS. ❌NO MANIFESTATION NOTIFICATIONS"
+  return;
 };
 
 const createManifestation = async (userId: string, data: any, file?: Express.Multer.File) => {

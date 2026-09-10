@@ -20,8 +20,16 @@ export const forgotPasswordTemplate = async (data: ForgotPasswordData) => {
         params: {
           OTP: otp,
           otp,
+          CODE: otp,
+          code: otp,
+          RESET_CODE: otp,
+          reset_code: otp,
+          resetCode: otp,
+          passcode: otp,
+          token: otp,
           NAME: userName,
           userName,
+          name: userName,
           requestedAt,
         },
       });

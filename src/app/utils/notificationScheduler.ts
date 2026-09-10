@@ -106,40 +106,9 @@ export const startNotificationScheduler = () => {
           reminder.daysOfMonth.includes(localParts.dayOfMonth) ||
           (reminder.monthlyLastDayEnabled && localParts.isLastDayOfMonth);
 
+        // Disabled per client instruction: "❌NO JOURNAL NOTIFICATION"
         if (reminder.type === "journal") {
-          if (reminder.dailyEnabled) {
-            await sendPushNotification(
-              fcmToken,
-              "Journal Reminder",
-              "Pause. Breathe. Reflect. Your Sable Dreams journal is ready when you are. 🪞",
-              {
-                screen: "journal",
-                frequency: "daily",
-              }
-            );
-          }
-          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
-            await sendPushNotification(
-              fcmToken,
-              "Journal Reminder",
-              "Your week in reflection - A weekly prompt to look back at your entries, celebrate your consistency, and set your intention for the week ahead.",
-              {
-                screen: "journal",
-                frequency: "weekly",
-              }
-            );
-          }
-          if (reminder.monthlyEnabled && monthlyDue) {
-            await sendPushNotification(
-              fcmToken,
-              "Journal Reminder",
-              "A month of becoming - A monthly reminder to revisit your journey - how much you have grown, healed, and stepped into yourself.",
-              {
-                screen: "journal",
-                frequency: "monthly",
-              }
-            );
-          }
+          // Journal notifications disabled
         } else if (reminder.type === "mood") {
           if (reminder.dailyEnabled) {
             await sendPushNotification(
@@ -175,47 +144,7 @@ export const startNotificationScheduler = () => {
             );
           }
         } else if (reminder.type === "affirmation") {
-          const dynamicAffirmation = await getRandomAffirmation();
-          const affirmationText = dynamicAffirmation
-            ? `"${dynamicAffirmation.text}"`
-            : "A beautiful reflection is waiting for you today.";
-
-          if (reminder.dailyEnabled) {
-            await sendPushNotification(
-              fcmToken,
-              "Affirmation Reminder",
-              "A new affirmation has arrived. your moment of centering awaits ✨",
-              {
-                screen: "affirmation",
-                frequency: "daily",
-                affirmationId: dynamicAffirmation?.id || "",
-              }
-            );
-          }
-          if (reminder.weeklyEnabled && reminder.daysOfWeek.includes(localParts.dayOfWeek)) {
-            await sendPushNotification(
-              fcmToken,
-              "Affirmation Reminder",
-              `Words for your becoming - ${affirmationText}`,
-              {
-                screen: "affirmation",
-                frequency: "weekly",
-                affirmationId: dynamicAffirmation?.id || "",
-              }
-            );
-          }
-          if (reminder.monthlyEnabled && monthlyDue) {
-            await sendPushNotification(
-              fcmToken,
-              "Affirmation Reminder",
-              `A love letter from her - ${affirmationText}`,
-              {
-                screen: "affirmation",
-                frequency: "monthly",
-                affirmationId: dynamicAffirmation?.id || "",
-              }
-            );
-          }
+          // Disabled per client instruction: "❌NO REFLECTION NOTIFICATIONS"
         }
       }
     } catch (error) {
@@ -224,85 +153,8 @@ export const startNotificationScheduler = () => {
   });
 
 
-  // Daily push at 4 AM EST from books management table (DailyReflection) to the app.
-  cron.schedule(
-    "0 4 * * *",
-    async () => {
-      try {
-        // Get current date in America/New_York (EST/EDT) timezone formatted as MM/DD/YYYY
-        const todayStr = new Intl.DateTimeFormat("en-US", {
-          timeZone: "America/New_York",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        }).format(new Date());
-
-        const dailyReflection = await prisma.dailyReflection.findUnique({
-          where: { date: todayStr },
-        });
-
-        if (!dailyReflection) {
-          return;
-        }
-
-        const book1 = dailyReflection.book1Title?.trim();
-        const book2 = dailyReflection.book2Title?.trim();
-
-        if (!book1 && !book2) {
-          return;
-        }
-
-        // Build the message body
-        let messageBody = "";
-        if (book1 && book2) {
-          messageBody = `Today's recommended books: "${book1}" and "${book2}".`;
-        } else if (book1) {
-          messageBody = `Today's recommended book: "${book1}".`;
-        } else if (book2) {
-          messageBody = `Today's recommended book: "${book2}".`;
-        }
-
-        const title = "Today's Reading Recommendation";
-
-        // Query all active users who have an FCM token
-        const users = await prisma.user.findMany({
-          where: {
-            fcmToken: {
-              not: null,
-              notIn: [""],
-            },
-            status: "active",
-          },
-          select: {
-            id: true,
-            fcmToken: true,
-          },
-        });
-
-
-
-        for (const user of users) {
-          if (!user.fcmToken) continue;
-          // Send push notification and log in DB
-          await sendPushNotification(
-            user.fcmToken,
-            title,
-            messageBody,
-            {
-              screen: "books",
-              date: todayStr,
-            },
-            user.id
-          );
-        }
-      } catch (error) {
-        console.error("[SCHEDULER] Error sending daily books push notification:", error);
-      }
-    },
-    {
-      timezone: "America/New_York",
-    }
-  );
+  // Daily reading recommendation push disabled per client instruction: "❌NO READING NOTIFICATION"
+  // cron.schedule("0 4 * * *", async () => { ... }, { timezone: "America/New_York" });
 
 
   // Monthly cron job at 12:00 AM on the 1st day of every month to reset all users' monthlyTokenLimit to default and reset proxy token baselines.
